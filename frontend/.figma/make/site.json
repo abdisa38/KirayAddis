@@ -1,5 +1,6 @@
 {
-  "description": "This web application streamlines task management for teams, enabling efficient collaboration, real-time updates, and enhanced productivity.",
+  "title": "Addis Kiray — Find a home that fits your life in Addis Ababa",
+  "description": "Intelligent rental discovery and relocation platform in Addis Ababa. Search by location, budget, lifestyle and commute.",
   "robots": {
     "index": false
   },
