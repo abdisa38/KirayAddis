@@ -1,30 +1,20 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-import dns from "node:dns";
 
-try {
-  dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
-} catch (e) {}
+const directUri =
+  "mongodb://abdisaawel313_db_user:zWQVXBcMg2044HCw@ac-ykchcsw-shard-00-00.ovb8kel.mongodb.net:27017,ac-ykchcsw-shard-00-01.ovb8kel.mongodb.net:27017,ac-ykchcsw-shard-00-02.ovb8kel.mongodb.net:27017/addis_kiray?ssl=true&authSource=admin&retryWrites=true&w=majority";
 
-dotenv.config();
-
-const test = async () => {
-  const uri = process.env.MONGO_URI;
-  console.log("Testing connection to:", uri?.replace(/:([^:@]+)@/, ":****@"));
+async function testDirect() {
   try {
-    const conn = await mongoose.connect(uri || "", {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
+    console.log("[Test] Connecting via direct standard URI...");
+    const conn = await mongoose.connect(directUri, {
+      serverSelectionTimeoutMS: 10000,
     });
-    console.log("SUCCESS! Connected to host:", conn.connection.host);
+    console.log("✅ SUCCESS! Connected to MongoDB Atlas host:", conn.connection.host);
     process.exit(0);
   } catch (err: any) {
-    console.error("FAIL Reason:", err.name, "-", err.message);
-    if (err.reason) {
-      console.error("Topology Description:", JSON.stringify(err.reason, null, 2));
-    }
+    console.error("❌ Connection Error:", err.name, err.message);
     process.exit(1);
   }
-};
+}
 
-test();
+testDirect();
