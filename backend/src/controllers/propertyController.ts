@@ -338,3 +338,59 @@ export const confirmAvailability = async (
     next(error);
   }
 };
+
+// @desc    Get neighborhood stats with property counts
+// @route   GET /api/properties/neighborhoods
+// @access  Public
+export const getNeighborhoods = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const stats = await Property.aggregate([
+      { $match: { "availability.status": { $in: ["Available", "Soon"] } } },
+      {
+        $group: {
+          _id: { subCity: "$location.subCity", neighborhood: "$location.neighborhood" },
+          count: { $sum: 1 },
+          image: { $first: { $arrayElemAt: ["$media.url", 0] } },
+          landmark: { $first: "$location.landmark" },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.subCity",
+          neighborhoods: {
+            $push: {
+              neighborhood: "$_id.neighborhood",
+              count: "$count",
+              image: "$image",
+              landmark: "$landmark",
+            },
+          },
+          totalCount: { $sum: "$count" },
+        },
+      },
+      { $sort: { totalCount: -1 } },
+    ]);
+
+    const totalProperties = await Property.countDocuments({
+      "availability.status": { $in: ["Available", "Soon"] },
+    });
+
+    const result = stats.map((s) => ({
+      subCity: s._id,
+      count: s.totalCount,
+      neighborhoods: s.neighborhoods,
+    }));
+
+    res.status(200).json({
+      success: true,
+      totalProperties,
+      areas: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

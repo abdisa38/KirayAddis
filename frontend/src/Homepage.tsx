@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Icon from "./components/Icon";
+import { apiRequest } from "./api/client";
 
 const pics = [
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
@@ -11,52 +12,55 @@ const pics = [
   "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
 ];
 
-const neighborhoods = [
-  { name: "Bole", desc: "Central, airport access & vibrant commercial hub", img: pics[0], count: "128+ homes" },
-  { name: "Kazanchis", desc: "Walking distance to UNECA, hotels & offices", img: pics[1], count: "64+ homes" },
-  { name: "CMC", desc: "Modern residential compounds & quiet living", img: pics[2], count: "92+ homes" },
-  { name: "Yeka", desc: "Green hills, embassies & panoramic views", img: pics[3], count: "45+ homes" },
-  { name: "Sarbet", desc: "Expats, cafes, international schools & quiet streets", img: pics[1], count: "38+ homes" },
-  { name: "Piassa", desc: "Historic heart, new corridor development", img: pics[0], count: "51+ homes" },
-];
+// Descriptions for known neighborhoods (used as fallback enrichment)
+const neighborhoodMeta: Record<string, string> = {
+  Bole: "Central, airport access & vibrant commercial hub",
+  Kazanchis: "Walking distance to UNECA, hotels & offices",
+  Kirkos: "Walking distance to UNECA, hotels & offices",
+  CMC: "Modern residential compounds & quiet living",
+  Yeka: "Green hills, embassies & panoramic views",
+  "Nifas Silk-Lafto": "Expats, cafes, international schools & quiet streets",
+  Sarbet: "Expats, cafes, international schools & quiet streets",
+  Arada: "Historic heart, new corridor development",
+  Piassa: "Historic heart, new corridor development",
+};
 
-const featuredHomes = [
-  {
-    name: "Sunlit two-bedroom apartment",
-    loc: "Bole, Addis Ababa",
-    price: "42,000",
-    match: "94",
-    commute: "24 min to Edna Mall",
-    beds: 2,
-    baths: 2,
-    area: "92 m²",
-    tag: "Best match",
-    to: "/property/sunlit-2bed",
-  },
-  {
-    name: "Modern apartment near Atlas",
-    loc: "Bole Atlas, Addis Ababa",
-    price: "36,000",
-    match: "91",
-    commute: "18 min to Edna Mall",
-    beds: 2,
-    baths: 1,
-    area: "85 m²",
-    tag: "Verified",
-    to: "/property/sunlit-2bed",
-  },
-  {
-    name: "Quiet home in a secure compound",
-    loc: "Bole Medhanealem, Addis Ababa",
-    price: "39,500",
-    match: "88",
-    commute: "27 min to Edna Mall",
-    beds: 3,
-    baths: 2,
-    area: "115 m²",
-    tag: "Compound",
-    to: "/property/sunlit-2bed",
-  },
+// Display name mapping for sub-cities to user-friendly neighborhood names
+const displayNames: Record<string, string> = {
+  Kirkos: "Kazanchis",
+  "Nifas Silk-Lafto": "Sarbet",
+  Arada: "Piassa",
+};
+
+interface NeighborhoodData {
+  name: string;
+  desc: string;
+  img: string;
+  count: string;
+}
+
+interface HomeData {
+  name: string;
+  loc: string;
+  price: string;
+  match: string;
+  commute: string;
+  beds: number;
+  baths: number;
+  area: string;
+  tag: string;
+  to: string;
+  img: string;
+}
+
+// Fallback data used only when backend is unreachable
+const fallbackNeighborhoods: NeighborhoodData[] = [
+  { name: "Bole", desc: "Central, airport access & vibrant commercial hub", img: pics[0], count: "0 homes" },
+  { name: "Kazanchis", desc: "Walking distance to UNECA, hotels & offices", img: pics[1], count: "0 homes" },
+  { name: "CMC", desc: "Modern residential compounds & quiet living", img: pics[2], count: "0 homes" },
+  { name: "Yeka", desc: "Green hills, embassies & panoramic views", img: pics[3], count: "0 homes" },
+  { name: "Sarbet", desc: "Expats, cafes, international schools & quiet streets", img: pics[1], count: "0 homes" },
+  { name: "Piassa", desc: "Historic heart, new corridor development", img: pics[0], count: "0 homes" },
 ];
 
 export default function Homepage() {
@@ -65,32 +69,75 @@ export default function Homepage() {
   const [budget, setBudget] = useState("40,000");
   const [aiQuery, setAiQuery] = useState("I work in Bole, earn 40k, need a 2-bedroom house under 30 min commute.");
   const [savedHomes, setSavedHomes] = useState<Record<number, boolean>>({});
-  const [liveHomes, setLiveHomes] = useState(featuredHomes);
+  const [liveHomes, setLiveHomes] = useState<HomeData[]>([]);
+  const [liveNeighborhoods, setLiveNeighborhoods] = useState<NeighborhoodData[]>(fallbackNeighborhoods);
+  const [totalProperties, setTotalProperties] = useState(0);
+  const [heroProperty, setHeroProperty] = useState<HomeData | null>(null);
+  const [loading, setLoading] = useState(true);
   const nav = useNavigate();
 
+  // Fetch neighborhoods from API
   useEffect(() => {
-    fetch("http://localhost:5000/api/properties?limit=3")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.properties?.length) {
-          const mapped = data.properties.map((p: any) => ({
-            name: p.title,
-            loc: `${p.location?.neighborhood || p.location?.subCity}, Addis Ababa`,
-            price: Number(p.price).toLocaleString(),
-            match: `${p.matchScore || 94}`,
-            commute: p.location?.landmark || "20-25 min commute",
-            beds: p.bedrooms,
-            baths: p.bathrooms,
-            area: `${p.area} m²`,
-            tag: p.verification?.status === "Approved" ? "Verified" : "Best match",
-            to: `/property/${p._id}`,
-          }));
-          setLiveHomes(mapped);
+    apiRequest("/properties/neighborhoods")
+      .then((data: any) => {
+        if (data.success && data.areas?.length) {
+          const mapped: NeighborhoodData[] = data.areas.map((area: any, i: number) => {
+            const subCity = area.subCity;
+            const friendlyName = displayNames[subCity] || subCity;
+            // Pick the best image from the area's neighborhoods
+            const img = area.neighborhoods?.[0]?.image || pics[i % pics.length];
+            return {
+              name: friendlyName,
+              desc: neighborhoodMeta[friendlyName] || neighborhoodMeta[subCity] || "Addis Ababa neighborhood",
+              img,
+              count: `${area.count}+ homes`,
+            };
+          });
+          setLiveNeighborhoods(mapped);
+          setTotalProperties(data.totalProperties || 0);
         }
       })
       .catch(() => {
-        // Fallback to initial featured homes
+        // Keep fallback neighborhoods
       });
+  }, []);
+
+  // Fetch featured properties from API
+  useEffect(() => {
+    setLoading(true);
+    apiRequest("/properties?limit=6")
+      .then((data: any) => {
+        if (data.success && data.properties?.length) {
+          const mapped: HomeData[] = data.properties.map((p: any) => {
+            const coverMedia = p.media?.find((m: any) => m.isCover) || p.media?.[0];
+            return {
+              name: p.title,
+              loc: `${p.location?.neighborhood || p.location?.subCity}, Addis Ababa`,
+              price: Number(p.price).toLocaleString(),
+              match: `${p.matchScore || 90}`,
+              commute: p.location?.landmark || "20-25 min commute",
+              beds: p.bedrooms,
+              baths: p.bathrooms,
+              area: `${p.area} m²`,
+              tag: p.verification?.status === "Approved" ? "Verified" : "New",
+              to: `/property/${p._id}`,
+              img: coverMedia?.url || pics[0],
+            };
+          });
+          setLiveHomes(mapped);
+          // Set the first property as the hero map preview property
+          if (mapped.length > 0) {
+            setHeroProperty(mapped[0]);
+          }
+          if (!totalProperties && data.total) {
+            setTotalProperties(data.total);
+          }
+        }
+      })
+      .catch(() => {
+        // No fallback needed - will show empty state
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const toggleSave = (index: number, e: React.MouseEvent) => {
@@ -300,13 +347,13 @@ export default function Homepage() {
             <span className="area a4">CMC</span>
 
             <div className="marker one" style={{ position: "absolute", top: "25%", left: "28%" }}>
-              ETB 36k
+              {heroProperty ? `ETB ${(Number(heroProperty.price.replace(/,/g, "")) / 1000).toFixed(0)}k` : "ETB 36k"}
             </div>
             <div className="marker two" style={{ position: "absolute", top: "45%", right: "20%" }}>
-              ETB 39.5k
+              {liveHomes[2] ? `ETB ${(Number(liveHomes[2].price.replace(/,/g, "")) / 1000).toFixed(1)}k` : "ETB 39.5k"}
             </div>
             <div className="marker main" style={{ position: "absolute", top: "36%", left: "48%" }}>
-              <Icon name="map" /> ETB 42k • 94% Match
+              <Icon name="map" /> {heroProperty ? `ETB ${(Number(heroProperty.price.replace(/,/g, "")) / 1000).toFixed(0)}k • ${heroProperty.match}% Match` : "ETB 42k • 94% Match"}
             </div>
 
             {/* Floating Top Badge */}
@@ -344,16 +391,16 @@ export default function Homepage() {
                 boxShadow: "0 8px 24px rgba(10, 40, 70, 0.18)",
               }}
             >
-              <img src={pics[0]} alt="Selected property" />
+              <img src={heroProperty?.img || pics[0]} alt="Selected property" />
               <div>
                 <span className="verified">
                   <Icon name="check" /> Verified property
                 </span>
-                <h3>Sunlit two-bedroom apartment</h3>
-                <p>Bole, Addis Ababa • 24 min to work</p>
-                <b>ETB 42,000 <em>/ month</em></b>
+                <h3>{heroProperty?.name || "Sunlit two-bedroom apartment"}</h3>
+                <p>{heroProperty?.loc || "Bole, Addis Ababa"} • {heroProperty?.commute || "24 min to work"}</p>
+                <b>ETB {heroProperty?.price || "42,000"} <em>/ month</em></b>
               </div>
-              <button onClick={() => nav("/property/sunlit-2bed")}>
+              <button onClick={() => nav(heroProperty?.to || "/search")}>
                 View Property Details <Icon name="arrow" />
               </button>
             </div>
@@ -440,7 +487,7 @@ export default function Homepage() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "18px" }}>
-          {neighborhoods.map((n) => (
+          {liveNeighborhoods.map((n) => (
             <article
               key={n.name}
               onClick={() => nav(`/search?location=${encodeURIComponent(n.name)}`)}
@@ -496,7 +543,7 @@ export default function Homepage() {
               </p>
             </div>
             <Link to="/search" style={{ color: "#087d70", fontSize: "11px", fontWeight: 800, textDecoration: "none" }}>
-              View all 128 homes →
+              View all {totalProperties || "—"} homes →
             </Link>
           </div>
 
@@ -509,7 +556,7 @@ export default function Homepage() {
                 style={{ cursor: "pointer", display: "flex", flexDirection: "column", border: "1px solid #e0e9ee", borderRadius: "12px", overflow: "hidden", background: "#fff" }}
               >
                 <div className="photo" style={{ height: "190px" }}>
-                  <img src={pics[i]} alt={h.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={h.img} alt={h.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <span className="verified">
                     <Icon name="check" /> Verified property
                   </span>
@@ -696,13 +743,13 @@ export default function Homepage() {
                 alignItems: "center",
               }}
             >
-              <img src={pics[1]} alt="Preview" style={{ width: "90px", height: "70px", borderRadius: "6px", objectFit: "cover" }} />
+              <img src={liveHomes[1]?.img || pics[1]} alt="Preview" style={{ width: "90px", height: "70px", borderRadius: "6px", objectFit: "cover" }} />
               <div>
                 <span style={{ background: "#e1f4ef", color: "#087d70", padding: "2px 6px", borderRadius: "99px", fontSize: "8px", fontWeight: 800 }}>
-                  94% Match
+                  {liveHomes[1]?.match || "94"}% Match
                 </span>
-                <b style={{ display: "block", fontSize: "12px", marginTop: "3px" }}>Modern apartment near Atlas</b>
-                <span style={{ fontSize: "10px", color: "#6a8194" }}>36,000 ETB / mo • 18 min commute</span>
+                <b style={{ display: "block", fontSize: "12px", marginTop: "3px" }}>{liveHomes[1]?.name || "Modern apartment near Atlas"}</b>
+                <span style={{ fontSize: "10px", color: "#6a8194" }}>{liveHomes[1]?.price || "36,000"} ETB / mo • {liveHomes[1]?.commute || "18 min commute"}</span>
               </div>
             </div>
           </div>
