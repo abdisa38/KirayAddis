@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { useAuth } from "./context/AuthContext";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
@@ -7,20 +8,33 @@ export default function Register() {
   const [pw, setPw] = useState(false);
   const [role, setRole] = useState<"tenant" | "landlord">("tenant");
   const [name, setName] = useState("");
-  const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
   const nav = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate user registration & redirect to email verification
-    nav("/auth/verify-email");
+    setError("");
+    setLoading(true);
+
+    try {
+      await register(name, email, password, role, phone);
+      nav("/auth/verify-email");
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please check your information.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main className="login-page">
       <div className="login-panel">
-        <Logo />
+        <Logo to="/" />
         <form onSubmit={handleSubmit}>
           <p className="auth-kicker">GET STARTED</p>
           <h1>Create your account</h1>
@@ -57,13 +71,23 @@ export default function Register() {
           </label>
 
           <label>
-            Email or phone number
+            Email address
             <input
-              type="text"
-              placeholder="you@example.com or +251 9..."
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
+            />
+          </label>
+
+          <label>
+            Phone number (optional)
+            <input
+              type="tel"
+              placeholder="+251 9..."
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </label>
 
@@ -72,7 +96,7 @@ export default function Register() {
             <div className="password-field">
               <input
                 type={pw ? "text" : "password"}
-                placeholder="Create a strong password (min 8 chars)"
+                placeholder="Create a strong password (min 6 chars)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -87,6 +111,13 @@ export default function Register() {
             </div>
           </label>
 
+          {error && (
+            <p className="login-error">
+              <Icon name="lock" />
+              {error}
+            </p>
+          )}
+
           <div style={{ margin: "14px 0", fontSize: "10px", color: "#5d7388" }}>
             <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontWeight: 400 }}>
               <input type="checkbox" required style={{ marginTop: "2px", accentColor: "#0b8879" }} />
@@ -97,16 +128,23 @@ export default function Register() {
             </label>
           </div>
 
-          <button className="auth-primary" type="submit">
-            Create Account
+          <button className="auth-primary" type="submit" disabled={loading}>
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
 
           <div className="auth-divider">
             <span>or</span>
           </div>
 
-          <button className="google" type="button" onClick={() => nav("/tenant")}>
-            G <span>Continue with Google</span>
+          <button
+            className="google"
+            type="button"
+            onClick={async () => {
+              await register("Demo Google User", `user_${Date.now()}@example.com`, "password123", role);
+              nav("/tenant");
+            }}
+          >
+            G <span>Sign Up with Google</span>
           </button>
 
           <p className="login-bottom">

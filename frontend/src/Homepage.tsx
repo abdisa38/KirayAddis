@@ -65,7 +65,33 @@ export default function Homepage() {
   const [budget, setBudget] = useState("40,000");
   const [aiQuery, setAiQuery] = useState("I work in Bole, earn 40k, need a 2-bedroom house under 30 min commute.");
   const [savedHomes, setSavedHomes] = useState<Record<number, boolean>>({});
+  const [liveHomes, setLiveHomes] = useState(featuredHomes);
   const nav = useNavigate();
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/properties?limit=3")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.properties?.length) {
+          const mapped = data.properties.map((p: any) => ({
+            name: p.title,
+            loc: `${p.location?.neighborhood || p.location?.subCity}, Addis Ababa`,
+            price: Number(p.price).toLocaleString(),
+            match: `${p.matchScore || 94}`,
+            commute: p.location?.landmark || "20-25 min commute",
+            beds: p.bedrooms,
+            baths: p.bathrooms,
+            area: `${p.area} m²`,
+            tag: p.verification?.status === "Approved" ? "Verified" : "Best match",
+            to: `/property/${p._id}`,
+          }));
+          setLiveHomes(mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback to initial featured homes
+      });
+  }, []);
 
   const toggleSave = (index: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -475,7 +501,7 @@ export default function Homepage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
-            {featuredHomes.map((h, i) => (
+            {liveHomes.map((h, i) => (
               <article
                 key={h.name}
                 onClick={() => nav(h.to)}

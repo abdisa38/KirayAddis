@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 import Icon from "./Icon";
 
 export default function Navbar({
-  showAvatar = true,
   actionButton = "list",
 }: {
   showAvatar?: boolean;
@@ -13,6 +13,8 @@ export default function Navbar({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [lang, setLang] = useState<"EN" | "AM">("EN");
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
 
   const navLinks = [
     { label: "Find a Home", to: "/search" },
@@ -21,6 +23,12 @@ export default function Navbar({
     { label: "Trust & Safety", to: "/trust-safety" },
     { label: "Prototypes", to: "/prototype" },
   ];
+
+  const getInitials = (name?: string) => {
+    if (!name) return "AK";
+    const parts = name.split(" ");
+    return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name.slice(0, 2).toUpperCase();
+  };
 
   return (
     <header className="nav">
@@ -49,12 +57,45 @@ export default function Navbar({
         >
           {lang === "EN" ? "EN / አማርኛ" : "አማ / English"}
         </button>
-        <Link
-          to="/login"
-          style={{ textDecoration: "none", color: "#5c738a", fontSize: "11px" }}
-        >
-          Sign In
-        </Link>
+
+        {user ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <Link
+              to={user.role === "admin" ? "/admin" : user.role === "landlord" ? "/landlord/listing" : "/tenant"}
+              className="avatar"
+              title={`${user.name} (${user.role})`}
+              style={{ textDecoration: "none" }}
+            >
+              {getInitials(user.name)}
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                nav("/login");
+              }}
+              style={{ border: "none", background: "transparent", color: "#8798a5", fontSize: "10px", cursor: "pointer" }}
+            >
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <>
+            <Link
+              to="/login"
+              style={{ textDecoration: "none", color: "#5c738a", fontSize: "11px", fontWeight: 700 }}
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              style={{ textDecoration: "none", color: "#087d70", fontSize: "11px", fontWeight: 800 }}
+            >
+              Sign Up
+            </Link>
+          </>
+        )}
+
         {actionButton === "list" && (
           <Link
             to="/landlord/listing"
@@ -66,16 +107,6 @@ export default function Navbar({
             }}
           >
             List Property
-          </Link>
-        )}
-        {showAvatar && (
-          <Link
-            to="/tenant"
-            className="avatar"
-            title="Tenant Account"
-            style={{ textDecoration: "none" }}
-          >
-            AM
           </Link>
         )}
       </div>
@@ -124,22 +155,37 @@ export default function Navbar({
             </Link>
           ))}
           <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <Link
-              to="/login"
-              onClick={() => setMobileOpen(false)}
-              className="btn outline"
-              style={{ textAlign: "center", textDecoration: "none" }}
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/landlord/listing"
-              onClick={() => setMobileOpen(false)}
-              className="btn"
-              style={{ textAlign: "center", textDecoration: "none" }}
-            >
-              List Your Property
-            </Link>
+            {user ? (
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  setMobileOpen(false);
+                }}
+                className="btn outline"
+              >
+                Sign Out ({user.name})
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="btn outline"
+                  style={{ textAlign: "center", textDecoration: "none" }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMobileOpen(false)}
+                  className="btn"
+                  style={{ textAlign: "center", textDecoration: "none" }}
+                >
+                  Create Account
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

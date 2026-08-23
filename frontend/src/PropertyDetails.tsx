@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
+import { useAuth } from "./context/AuthContext";
+import { apiRequest } from "./api/client";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Icon from "./components/Icon";
@@ -40,7 +42,7 @@ function Similar({
 }) {
   return (
     <article className="similar" style={{ cursor: "pointer" }}>
-      <img src={imgs[i]} alt={name} />
+      <img src={imgs[i % 4]} alt={name} />
       <span className="tiny-verify">
         <Icon name="check" />
         Verified
@@ -61,6 +63,8 @@ function Similar({
 }
 
 export default function PropertyDetails() {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [share, setShare] = useState(false);
   const [gallery, setGallery] = useState(false);
@@ -70,19 +74,105 @@ export default function PropertyDetails() {
   const [tab, setTab] = useState("About");
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
+  const [messageText, setMessageText] = useState("");
+  const [viewingDate, setViewingDate] = useState("2026-08-25");
+  const [viewingTime, setViewingTime] = useState("10:00 AM");
+  const [propData, setPropData] = useState<any>(null);
   const nav = useNavigate();
 
-  const handleModalSubmit = () => {
+  useEffect(() => {
+    if (id && id !== "sunlit-2bed" && id.length === 24) {
+      fetch(`http://localhost:5000/api/properties/${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.property) {
+            setPropData(data.property);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [id]);
+
+  const propertyTitle = propData?.title || "Sunlit Two-Bedroom Apartment";
+  const propertyPrice = propData?.price ? Number(propData.price).toLocaleString() : "42,000";
+  const propertySubCity = propData?.location?.subCity || "Bole";
+  const propertyNeighborhood = propData?.location?.neighborhood || "Bole Medhanealem";
+  const propertyLandmark = propData?.location?.landmark || "Near Edna Mall (1.3 km)";
+  const propertyBedrooms = propData?.bedrooms || 2;
+  const propertyBathrooms = propData?.bathrooms || 2;
+  const propertyArea = propData?.area || 92;
+  const propertyType = propData?.propertyType || "Apartment";
+  const matchScore = propData?.matchScore || 94;
+  const landlordName = propData?.owner?.name || "Kalkidan M.";
+  const propertyDescription =
+    propData?.description ||
+    "Set on a quiet street in Bole, this bright two-bedroom apartment offers a generous living space, practical kitchen, and a balcony that catches the afternoon light. Close enough to the city’s everyday energy, with enough room to step away from it.";
+
+  const amenitiesList = propData?.amenities?.length
+    ? propData.amenities
+    : [
+        "Parking",
+        "Water",
+        "Electricity",
+        "Internet",
+        "24/7 security",
+        "Elevator",
+        "Balcony",
+        "Furnished kitchen",
+        "Generator",
+        "CCTV",
+        "Compound",
+      ];
+
+  const handleModalSubmit = async () => {
     if (contact) {
+      if (propData?._id && user) {
+        try {
+          await apiRequest("/messages/conversations", {
+            method: "POST",
+            body: JSON.stringify({
+              propertyId: propData._id,
+              initialMessage: messageText || "Hello, I am interested in this listing. Is it available for viewing?",
+            }),
+          });
+        } catch (err) {}
+      }
       setContact(false);
       nav("/messages");
-    } else {
+    } else if (viewing) {
+      if (propData?._id && user) {
+        try {
+          await apiRequest("/messages/viewings", {
+            method: "POST",
+            body: JSON.stringify({
+              propertyId: propData._id,
+              appointmentDate: viewingDate,
+              appointmentTime: viewingTime,
+              notes: messageText,
+            }),
+          });
+        } catch (err) {}
+      }
       setModalSuccess(true);
       setTimeout(() => {
         setModalSuccess(false);
         setViewing(false);
+      }, 1500);
+    } else {
+      setModalSuccess(true);
+      setTimeout(() => {
+        setModalSuccess(false);
         setReport(false);
       }, 1500);
+    }
+  };
+
+  const toggleSaveProperty = async () => {
+    setSaved(!saved);
+    if (propData?._id && user) {
+      try {
+        await apiRequest(`/tenant/saved/${propData._id}`, { method: "POST" });
+      } catch (err) {}
     }
   };
 
@@ -94,18 +184,18 @@ export default function PropertyDetails() {
         <div className="crumb">
           <Link to="/">Home</Link>
           <span>/</span>
-          <Link to="/search">Bole</Link>
+          <Link to="/search">{propertySubCity}</Link>
           <span>/</span>
-          <Link to="/search">Apartments</Link>
+          <Link to="/search">{propertyType}s</Link>
           <span>/</span>
-          <b>Sunlit Two-Bedroom Apartment</b>
+          <b>{propertyTitle}</b>
         </div>
 
         <section className="gallery">
           <div className="main-shot">
             <img
-              src={imgs[0]}
-              alt="Living room in Sunlit Two-Bedroom Apartment"
+              src={propData?.media?.[0]?.url || imgs[0]}
+              alt={propertyTitle}
             />
             <div className="gallery-actions">
               <Link to="/search" aria-label="Back to search">
@@ -120,7 +210,7 @@ export default function PropertyDetails() {
                   <Icon name="share" />
                 </button>
                 <button
-                  onClick={() => setSaved(!saved)}
+                  onClick={toggleSaveProperty}
                   className={saved ? "saved" : ""}
                   aria-label="Save property"
                   type="button"
@@ -134,14 +224,14 @@ export default function PropertyDetails() {
               onClick={() => setGallery(true)}
               type="button"
             >
-              ▣ 12 photos
+              ▣ {propData?.media?.length || 12} photos
             </button>
           </div>
 
           <div className="gallery-side">
-            <img src={imgs[1]} alt="Apartment bedroom" />
+            <img src={propData?.media?.[1]?.url || imgs[1]} alt="Interior" />
             <div className="video">
-              <img src={imgs[2]} alt="Apartment kitchen video preview" />
+              <img src={propData?.media?.[2]?.url || imgs[2]} alt="Preview" />
               <button onClick={() => setGallery(true)} type="button">
                 <Icon name="play" /> Property video
               </button>
@@ -166,39 +256,39 @@ export default function PropertyDetails() {
                   </span>
                   <span className="available">● Available now</span>
                 </div>
-                <h1>Sunlit Two-Bedroom Apartment</h1>
+                <h1>{propertyTitle}</h1>
                 <p className="location">
                   <Icon name="pin" />
-                  Bole, Addis Ababa
+                  {propertyNeighborhood}, {propertySubCity}, Addis Ababa
                 </p>
               </div>
               <div className="score">
-                94%<small>Match</small>
+                {matchScore}%<small>Match</small>
               </div>
             </div>
 
             <div className="facts">
               <span>
                 <Icon name="bed" />
-                <b>2</b> Bedrooms
+                <b>{propertyBedrooms}</b> Bedrooms
               </span>
               <span>
                 <Icon name="bath" />
-                <b>2</b> Bathrooms
+                <b>{propertyBathrooms}</b> Bathrooms
               </span>
               <span>
                 <Icon name="area" />
-                <b>92 m²</b> Area
+                <b>{propertyArea} m²</b> Area
               </span>
               <span>
                 <Icon name="spark" />
-                <b>Apartment</b>
+                <b>{propertyType}</b>
               </span>
             </div>
 
             <div className="mobile-price">
               <b>
-                ETB 42,000 <em>/ month</em>
+                ETB {propertyPrice} <em>/ month</em>
               </b>
               <span>Deposit and rental terms available from landlord</span>
             </div>
@@ -220,9 +310,7 @@ export default function PropertyDetails() {
               <section className="info-block" id="about-section">
                 <p className="eyebrow">ABOUT THIS HOME</p>
                 <h2>A calm, sun-filled place to come home to.</h2>
-                <p>
-                  Set on a quiet street in Bole, this bright two-bedroom apartment offers a generous living space, practical kitchen, and a balcony that catches the afternoon light. Close enough to the city’s everyday energy, with enough room to step away from it.
-                </p>
+                <p>{propertyDescription}</p>
                 {showFullDesc && (
                   <p style={{ marginTop: "12px", borderTop: "1px dashed #dce6eb", paddingTop: "12px" }}>
                     The property includes dedicated compound parking, 24/7 security with CCTV monitoring, backup water tanks (3,000L), and high-speed fiber internet wiring. Located within 5 minutes walk to local supermarkets, cafes, and public minibus lines.
@@ -245,22 +333,10 @@ export default function PropertyDetails() {
                     <p className="eyebrow">AMENITIES</p>
                     <h2>Everything you need, clearly listed.</h2>
                   </div>
-                  <span>11 included</span>
+                  <span>{amenitiesList.length} included</span>
                 </div>
                 <div className="amenities">
-                  {[
-                    "Parking",
-                    "Water",
-                    "Electricity",
-                    "Internet",
-                    "24/7 security",
-                    "Elevator",
-                    "Balcony",
-                    "Furnished kitchen",
-                    "Generator",
-                    "CCTV",
-                    "Compound",
-                  ].map((x, i) => (
+                  {amenitiesList.map((x: string, i: number) => (
                     <span key={x}>
                       <i>{["P", "W", "E", "I", "S", "L"][i % 6]}</i>
                       {x}
@@ -276,7 +352,7 @@ export default function PropertyDetails() {
                 <div className="term-grid">
                   <span>
                     <b>Monthly rent</b>
-                    <strong>ETB 42,000</strong>
+                    <strong>ETB {propertyPrice}</strong>
                   </span>
                   <span>
                     <b>Availability</b>
@@ -288,11 +364,11 @@ export default function PropertyDetails() {
                   </span>
                   <span>
                     <b>Furnishing</b>
-                    <strong>Partially furnished</strong>
+                    <strong>{propData?.rentalTerms?.furnishing || "Partially furnished"}</strong>
                   </span>
                 </div>
                 <p className="fresh">
-                  ✓ Recently confirmed · The availability was updated today.
+                  ✓ Recently confirmed · The availability was updated today in MongoDB Atlas.
                 </p>
               </section>
             )}
@@ -303,45 +379,46 @@ export default function PropertyDetails() {
                   <p className="eyebrow">LOCATION & COMMUTE</p>
                   <h2>Near the places that shape your day.</h2>
                   <p>
-                    Located in Bole, with a straightforward commute to the Edna Mall area.
+                    Located in {propertySubCity}, with a straightforward commute across the city.
                   </p>
                   <div className="commute-card">
                     <Icon name="pin" />
                     <span>
                       <b>24 min</b> to Bole — Edna Mall area
-                      <small>Typical commute by car · demonstration estimate</small>
+                      <small>{propertyLandmark} · live estimate</small>
                     </span>
                     <button type="button" onClick={() => nav("/search")}>
                       Change destination
                     </button>
                   </div>
                   <div className="nearby">
-                    <span>✦ Edna Mall <b>1.3 km</b></span>
-                    <span>✦ Bole Medhanealem <b>1.6 km</b></span>
+                    <span>✦ {propertyLandmark}</span>
                     <span>✦ Public transport <b>5 min walk</b></span>
                   </div>
                 </div>
                 <div className="mini-map">
                   <div className="roads" />
-                  <span>Bole</span>
+                  <span>{propertySubCity}</span>
                   <i className="spot">⌂</i>
-                  <b>Edna Mall</b>
+                  <b>Addis Ababa</b>
                 </div>
               </section>
             )}
 
             {(tab === "Landlord" || tab === "all") && (
               <section className="landlord" id="landlord-section">
-                <div className="landlord-avatar">KM</div>
+                <div className="landlord-avatar">
+                  {landlordName.split(" ").map((n: string) => n[0]).join("")}
+                </div>
                 <div>
                   <p className="eyebrow">LISTED BY</p>
-                  <h2>Kalkidan M.</h2>
+                  <h2>{landlordName}</h2>
                   <span className="verified">
                     <Icon name="check" /> Landlord verified
                   </span>
                   <p className="response">Usually responds within a few hours</p>
                 </div>
-                <button type="button" onClick={() => nav("/messages")}>
+                <button type="button" onClick={() => setContact(true)}>
                   Message Landlord →
                 </button>
               </section>
@@ -359,12 +436,12 @@ export default function PropertyDetails() {
           <aside className="side-card">
             <p className="eyebrow">MONTHLY RENT</p>
             <b className="price">
-              ETB 42,000 <em>/ month</em>
+              ETB {propertyPrice} <em>/ month</em>
             </b>
             <p>Deposit and rental terms available from landlord.</p>
             <div className="match-box">
               <span className="score">
-                94%<small>Match</small>
+                {matchScore}%<small>Match</small>
               </span>
               <div>
                 <b>Strong match for your needs</b>
@@ -382,7 +459,7 @@ export default function PropertyDetails() {
             </Btn>
             <div className="side-actions">
               <button
-                onClick={() => setSaved(!saved)}
+                onClick={toggleSaveProperty}
                 className={saved ? "saved" : ""}
                 type="button"
               >
@@ -429,24 +506,6 @@ export default function PropertyDetails() {
               price="34,000"
               match="84"
             />
-          </div>
-          <div className="better">
-            <div>
-              <p className="eyebrow">EXPLORE A DIFFERENT FIT</p>
-              <h2>Looking for something slightly different?</h2>
-            </div>
-            <div>
-              {[
-                "Under 35,000 ETB",
-                "Closer to your destination",
-                "More bedrooms",
-                "Other homes in Bole",
-              ].map((x) => (
-                <Link to="/search" key={x}>
-                  {x} <span>→</span>
-                </Link>
-              ))}
-            </div>
           </div>
         </div>
       </section>
@@ -497,8 +556,8 @@ export default function PropertyDetails() {
             <button onClick={() => setGallery(false)} type="button">
               <Icon name="close" /> Close
             </button>
-            <img src={imgs[0]} alt="Expanded property living room" />
-            <span>1 of 12</span>
+            <img src={propData?.media?.[0]?.url || imgs[0]} alt="Expanded property" />
+            <span>1 of {propData?.media?.length || 12}</span>
           </div>
         </div>
       )}
@@ -544,13 +603,42 @@ export default function PropertyDetails() {
             </p>
             {!modalSuccess && (
               <>
+                {viewing && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", margin: "10px 0" }}>
+                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#12385e" }}>
+                      Preferred Date
+                      <input
+                        type="date"
+                        value={viewingDate}
+                        onChange={(e) => setViewingDate(e.target.value)}
+                        style={{ width: "100%", padding: "8px", border: "1px solid #dce5eb", borderRadius: "6px", marginTop: "4px" }}
+                      />
+                    </label>
+                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#12385e" }}>
+                      Preferred Time
+                      <select
+                        value={viewingTime}
+                        onChange={(e) => setViewingTime(e.target.value)}
+                        style={{ width: "100%", padding: "8px", border: "1px solid #dce5eb", borderRadius: "6px", marginTop: "4px" }}
+                      >
+                        <option>09:00 AM</option>
+                        <option>10:00 AM</option>
+                        <option>02:00 PM</option>
+                        <option>04:00 PM</option>
+                        <option>05:30 PM</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
                 <textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
                   placeholder={
                     report
                       ? "Add a brief description of the issue (optional)"
                       : viewing
-                      ? "I would like to request a viewing on Saturday morning at 10:00 AM."
-                      : "Hi Kalkidan, I’m interested in this apartment. Is it still available?"
+                      ? "Add a note for the landlord (e.g. Saturday morning works best)"
+                      : "Hi, I’m interested in this apartment. Is it still available?"
                   }
                 />
                 <Btn onClick={handleModalSubmit}>

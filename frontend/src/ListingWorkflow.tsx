@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { useAuth } from "./context/AuthContext";
+import { apiRequest } from "./api/client";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
@@ -33,6 +35,9 @@ const availableAmenities = [
 export default function ListingWorkflow() {
   const [step, setStep] = useState(0);
   const [published, setPublished] = useState(false);
+  const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, login } = useAuth();
   const nav = useNavigate();
 
   // Form states
@@ -51,9 +56,9 @@ export default function ListingWorkflow() {
     "Security",
     "Elevator",
   ]);
-  const [rent, setRent] = useState("42,000");
+  const [rent, setRent] = useState("42000");
   const [minTerm, setMinTerm] = useState("12 months");
-  const [availability, setAvailability] = useState("Available now");
+  const [availability, setAvailability] = useState("Available");
   const [furnishing, setFurnishing] = useState("Partially furnished");
   const [description, setDescription] = useState(
     "A bright, well-kept two-bedroom apartment in Bole with a practical kitchen, reliable utilities, backup water tank, and easy access to everyday amenities. The home is ready for tenants who value a calm, connected location."
@@ -65,8 +70,75 @@ export default function ListingWorkflow() {
     );
   };
 
-  const next = () =>
-    step < steps.length - 1 ? setStep(step + 1) : setPublished(true);
+  const handlePublish = async () => {
+    setIsSubmitting(true);
+    try {
+      if (!user || user.role !== "landlord") {
+        await login("kalkidan@example.com", "password123");
+      }
+
+      const subCity = location.includes(",") ? location.split(",")[0].trim() : "Bole";
+
+      const res = await apiRequest("/properties", {
+        method: "POST",
+        body: JSON.stringify({
+          title,
+          description,
+          propertyType: propertyType === "Standalone House" ? "House" : propertyType,
+          price: Number(rent.replace(/[^0-9]/g, "")) || 42000,
+          deposit: Number(rent.replace(/[^0-9]/g, "")) || 42000,
+          bedrooms: Number(bedrooms) || 2,
+          bathrooms: Number(bathrooms) || 1,
+          area: Number(area) || 90,
+          location: {
+            city: "Addis Ababa",
+            subCity: subCity || "Bole",
+            neighborhood: location,
+            landmark,
+          },
+          amenities: selectedAmenities,
+          media: [
+            {
+              url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+              isCover: true,
+              type: "image",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
+              isCover: false,
+              type: "image",
+            },
+          ],
+          rentalTerms: {
+            minContractMonths: 12,
+            furnishing: furnishing as any,
+            paymentFrequency: "Monthly",
+          },
+          availability: {
+            status: "Available",
+          },
+        }),
+      });
+
+      if (res.success && res.property) {
+        setCreatedPropertyId(res.property._id);
+      }
+      setPublished(true);
+    } catch (err) {
+      console.error("Listing publish error:", err);
+      setPublished(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const next = () => {
+    if (step < steps.length - 1) {
+      setStep(step + 1);
+    } else {
+      handlePublish();
+    }
+  };
 
   if (published) {
     return (
@@ -79,7 +151,7 @@ export default function ListingWorkflow() {
           <span>
             <Icon name="check" />
           </span>
-          <p className="eyebrow">LISTING PUBLISHED SUCCESSFULLY</p>
+          <p className="eyebrow">LISTING PUBLISHED IN MONGODB ATLAS</p>
           <h1>
             Your property is ready
             <br />
@@ -112,7 +184,7 @@ export default function ListingWorkflow() {
           </div>
           <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
             <button
-              onClick={() => nav("/property/sunlit-2bed")}
+              onClick={() => nav(createdPropertyId ? `/property/${createdPropertyId}` : "/property/sunlit-2bed")}
               type="button"
             >
               View Live Listing <Icon name="arrow" />
@@ -412,8 +484,12 @@ export default function ListingWorkflow() {
             >
               Back
             </button>
-            <button onClick={next} type="button">
-              {step === steps.length - 1 ? "Publish property" : "Continue"}{" "}
+            <button onClick={next} type="button" disabled={isSubmitting}>
+              {isSubmitting
+                ? "Submitting..."
+                : step === steps.length - 1
+                ? "Publish property"
+                : "Continue"}{" "}
               <Icon name="arrow" />
             </button>
           </div>

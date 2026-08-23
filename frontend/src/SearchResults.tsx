@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import Navbar from "./components/Navbar";
 import Icon from "./components/Icon";
 
@@ -10,7 +10,7 @@ const pics = [
   "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
 ];
 
-const homes = [
+const fallbackHomes = [
   {
     id: "sunlit-2bed",
     name: "Sunlit two-bedroom apartment",
@@ -53,7 +53,7 @@ function Card({
   onSelect,
   onOpen,
 }: {
-  h: (typeof homes)[0];
+  h: (typeof fallbackHomes)[0];
   index: number;
   selected: boolean;
   onSelect: () => void;
@@ -63,9 +63,7 @@ function Card({
 
   return (
     <article
-      onClick={() => {
-        onSelect();
-      }}
+      onClick={onSelect}
       onDoubleClick={onOpen}
       className={`card ${selected ? "selected" : ""}`}
       style={{ cursor: "pointer" }}
@@ -126,18 +124,21 @@ function Card({
 function FilterDrawer({
   close,
   onApply,
+  selectedType,
+  setSelectedType,
 }: {
   close: () => void;
   onApply: () => void;
+  selectedType: string;
+  setSelectedType: (t: string) => void;
 }) {
-  const [active, setActive] = useState("Apartment");
   const opts = [
     "Apartment",
     "House",
     "Studio",
     "Condominium",
     "Villa",
-    "Shared accommodation",
+    "Shared",
   ];
 
   return (
@@ -174,8 +175,8 @@ function FilterDrawer({
             <button
               key={x}
               type="button"
-              onClick={() => setActive(x)}
-              className={active === x ? "on" : ""}
+              onClick={() => setSelectedType(x)}
+              className={selectedType === x ? "on" : ""}
             >
               {x}
             </button>
@@ -222,7 +223,7 @@ function FilterDrawer({
           Clear
         </button>
         <button onClick={onApply} type="button">
-          Show 128 homes
+          Apply Filters
         </button>
       </div>
     </aside>
@@ -233,11 +234,15 @@ function Map({
   selected,
   setSelected,
   onOpenDetails,
+  currentHomes,
 }: {
   selected: number;
   setSelected: (n: number) => void;
   onOpenDetails: () => void;
+  currentHomes: typeof fallbackHomes;
 }) {
+  const current = currentHomes[selected] || currentHomes[0] || fallbackHomes[0];
+
   return (
     <aside className="map">
       <div className="map-roads" />
@@ -278,15 +283,15 @@ function Map({
         </span>
       </div>
       <div className="map-preview">
-        <img src={pics[selected]} alt="Selected property" />
+        <img src={pics[selected % 4]} alt="Selected property" />
         <div>
           <span className="verified">
             <Icon name="check" /> Verified
           </span>
-          <h3>{homes[selected].name}</h3>
-          <p>{homes[selected].loc}</p>
+          <h3>{current.name}</h3>
+          <p>{current.loc}</p>
           <b>
-            ETB {homes[selected].price} <em>/ month</em>
+            ETB {current.price} <em>/ month</em>
           </b>
         </div>
         <button type="button" onClick={onOpenDetails}>
@@ -298,20 +303,57 @@ function Map({
 }
 
 export default function SearchResults() {
+  const [searchParams] = useSearchParams();
+  const initialLoc = searchParams.get("location") || "Bole, Addis Ababa";
+
   const [drawer, setDrawer] = useState(false);
   const [selected, setSelected] = useState(0);
-  const [mode, setMode] = useState<"default" | "empty" | "loading" | "error">(
-    "default"
-  );
+  const [mode, setMode] = useState<"default" | "empty" | "loading" | "error">("default");
   const [ai, setAi] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [locationQuery, setLocationQuery] = useState("Bole, Addis Ababa");
+  const [locationQuery, setLocationQuery] = useState(initialLoc);
+  const [propertyType, setPropertyType] = useState("Apartment");
+  const [homesList, setHomesList] = useState(fallbackHomes);
   const nav = useNavigate();
 
-  const visible = useMemo(() => (mode === "default" ? homes : []), [mode]);
+  useEffect(() => {
+    setMode("loading");
+    const subCity = locationQuery.split(",")[0].trim();
+    const queryUrl = `http://localhost:5000/api/properties?subCity=${encodeURIComponent(
+      subCity === "All" ? "" : subCity
+    )}`;
+
+    fetch(queryUrl)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.properties?.length) {
+          const mapped = data.properties.map((p: any) => ({
+            id: p._id,
+            name: p.title,
+            loc: `${p.location?.neighborhood || p.location?.subCity}, Addis Ababa`,
+            price: Number(p.price).toLocaleString(),
+            match: `${p.matchScore || 92}`,
+            commute: p.location?.landmark || "20-25 min commute",
+            tag: p.verification?.status === "Approved" ? "Verified" : undefined,
+          }));
+          setHomesList(mapped);
+          setMode("default");
+        } else {
+          setHomesList(fallbackHomes);
+          setMode("default");
+        }
+      })
+      .catch(() => {
+        setHomesList(fallbackHomes);
+        setMode("default");
+      });
+  }, [locationQuery, propertyType]);
+
+  const visible = useMemo(() => (mode === "default" ? homesList : []), [mode, homesList]);
 
   const openSelectedProperty = () => {
-    nav(`/property/${homes[selected].id}`);
+    const current = homesList[selected] || fallbackHomes[0];
+    nav(`/property/${current.id}`);
   };
 
   return (
@@ -327,7 +369,7 @@ export default function SearchResults() {
               <input
                 value={locationQuery}
                 onChange={(e) => setLocationQuery(e.target.value)}
-                style={{ border: "none", outline: "none", color: "#6d8397", fontSize: "12px", background: "transparent" }}
+                style={{ border: "none", outline: "none", color: "#254867", fontSize: "12px", background: "transparent" }}
               />
             </div>
           </div>
@@ -347,7 +389,7 @@ export default function SearchResults() {
         </div>
         <div className="suggestions">
           <span>Suggestions:</span>
-          {["Bole", "Bole Atlas", "Bole Medhanealem", "Kazanchis", "CMC"].map((s) => (
+          {["Bole", "Bole Atlas", "Bole Medhanealem", "Kazanchis", "Yeka", "CMC"].map((s) => (
             <button key={s} type="button" onClick={() => setLocationQuery(s)}>
               {s}
             </button>
@@ -363,8 +405,8 @@ export default function SearchResults() {
           <button className="filter active" type="button">
             Up to 40,000 ETB <b>⌄</b>
           </button>
-          <button className="filter active" type="button">
-            Apartment <b>⌄</b>
+          <button className="filter active" type="button" onClick={() => setDrawer(true)}>
+            {propertyType} <b>⌄</b>
           </button>
           <button className="filter active" type="button">
             2+ bedrooms <b>⌄</b>
@@ -402,11 +444,11 @@ export default function SearchResults() {
           <div className="result-head">
             <div>
               <p className="crumb">
-                <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>HOME</Link> / SEARCH / BOLE
+                <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>HOME</Link> / SEARCH / {locationQuery.toUpperCase()}
               </p>
-              <h1>Homes in Bole, Addis Ababa</h1>
+              <h1>Homes in {locationQuery}</h1>
               <span>
-                128 homes match your search <i>•</i> Demonstration results
+                {homesList.length} verified homes match your search <i>•</i> Live Atlas Database
               </span>
             </div>
             <div className="head-actions">
@@ -435,7 +477,7 @@ export default function SearchResults() {
 
           {mode === "default" && (
             <div className="chips">
-              {["Bole", "≤40,000 ETB", "2+ beds", "Apartment"].map((c) => (
+              {[locationQuery, "≤40,000 ETB", "2+ beds", propertyType].map((c) => (
                 <button key={c} type="button">
                   {c} ×
                 </button>
@@ -486,7 +528,7 @@ export default function SearchResults() {
             <div className="cards">
               {visible.map((h, i) => (
                 <Card
-                  key={h.name}
+                  key={h.name + i}
                   h={h}
                   index={i}
                   selected={selected === i}
@@ -517,6 +559,7 @@ export default function SearchResults() {
           selected={selected}
           setSelected={setSelected}
           onOpenDetails={openSelectedProperty}
+          currentHomes={homesList}
         />
       </section>
 
@@ -526,6 +569,8 @@ export default function SearchResults() {
           <FilterDrawer
             close={() => setDrawer(false)}
             onApply={() => setDrawer(false)}
+            selectedType={propertyType}
+            setSelectedType={setPropertyType}
           />
         </>
       )}

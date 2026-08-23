@@ -1,34 +1,77 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { useAuth } from "./context/AuthContext";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
 export default function Login() {
   const [pw, setPw] = useState(false);
-  const [error, setError] = useState(false);
-  const [contact, setContact] = useState("");
-  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [contact, setContact] = useState("alem@example.com");
+  const [password, setPassword] = useState("password123");
+  const { login } = useAuth();
   const nav = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    nav("/tenant");
+    setError("");
+    setLoading(true);
+
+    try {
+      await login(contact, password);
+      nav("/tenant");
+    } catch (err: any) {
+      setError(err.message || "Invalid email or password.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fillDemoAccount = (email: string, role: string) => {
+    setContact(email);
+    setPassword(role === "admin" ? "adminpassword123" : "password123");
   };
 
   return (
     <main className="login-page">
       <div className="login-panel">
-        <Logo />
+        <Logo to="/" />
         <form onSubmit={handleLogin}>
           <p className="auth-kicker">WELCOME BACK</p>
           <h1>Sign in to Addis Kiray</h1>
           <p>Continue your home-search journey in Addis Ababa.</p>
 
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", margin: "8px 0 14px" }}>
+            <span style={{ fontSize: "9px", color: "#6a8194", alignSelf: "center" }}>Demo quick fill:</span>
+            <button
+              type="button"
+              onClick={() => fillDemoAccount("alem@example.com", "tenant")}
+              style={{ padding: "3px 7px", fontSize: "8px", background: "#eef5f4", border: "1px solid #cce2dc", borderRadius: "99px", color: "#087d70", cursor: "pointer" }}
+            >
+              Tenant
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemoAccount("kalkidan@example.com", "landlord")}
+              style={{ padding: "3px 7px", fontSize: "8px", background: "#eef5f4", border: "1px solid #cce2dc", borderRadius: "99px", color: "#087d70", cursor: "pointer" }}
+            >
+              Landlord
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemoAccount("admin@addiskiray.com", "admin")}
+              style={{ padding: "3px 7px", fontSize: "8px", background: "#eef5f4", border: "1px solid #cce2dc", borderRadius: "99px", color: "#087d70", cursor: "pointer" }}
+            >
+              Admin
+            </button>
+          </div>
+
           <label>
-            Email or phone
+            Email address
             <input
-              type="text"
-              placeholder="you@example.com or +251 9..."
+              type="email"
+              placeholder="you@example.com"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
               required
@@ -58,7 +101,7 @@ export default function Login() {
           {error && (
             <p className="login-error">
               <Icon name="lock" />
-              The email, phone number or password is incorrect.
+              {error}
             </p>
           )}
 
@@ -66,34 +109,36 @@ export default function Login() {
             <label>
               <input type="checkbox" defaultChecked /> Remember me
             </label>
-            <button type="button" onClick={() => alert("Password reset link will be sent to your email.")}>
+            <button
+              type="button"
+              onClick={() => alert("Password reset instructions will be sent to your email address.")}
+            >
               Forgot password?
             </button>
           </div>
 
-          <button className="auth-primary" type="submit">
-            Sign In
+          <button className="auth-primary" type="submit" disabled={loading}>
+            {loading ? "Signing In..." : "Sign In"}
           </button>
 
           <div className="auth-divider">
             <span>or</span>
           </div>
 
-          <button className="google" type="button" onClick={() => nav("/tenant")}>
-            G <span>Continue with Google</span>
+          <button
+            className="google"
+            type="button"
+            onClick={async () => {
+              await login("alem@example.com", "password123");
+              nav("/tenant");
+            }}
+          >
+            G <span>Continue with Google (Demo Auto-Login)</span>
           </button>
 
           <p className="login-bottom">
             Don’t have an account? <Link to="/register">Create one</Link>
           </p>
-
-          <button
-            className="demo-error"
-            type="button"
-            onClick={() => setError(!error)}
-          >
-            {error ? "Hide demo error" : "Toggle demo error state"}
-          </button>
         </form>
       </div>
 
