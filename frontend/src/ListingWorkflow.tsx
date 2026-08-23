@@ -1,6 +1,424 @@
 import { useState } from "react";
-import { Link } from "react-router";
-const steps=["Property information","Location","Photos","Amenities","Rental terms","AI-assisted description","Preview","Verification","Publish"];
-function I({n}:{n:string}){const p:Record<string,React.ReactNode>={check:<path d="m5 12 4.2 4.2L19 6.5"/>,arrow:<path d="M4 12h16m-6-6 6 6-6 6"/>,pin:<><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.2"/></>,photo:<><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m3 17 5-5 3 3 3-3 7 7"/></>,home:<path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9Z"/>};return <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{p[n]}</svg>}
-function Logo(){return <div className="logo"><span className="mark"><svg viewBox="0 0 48 48"><path d="M24 5.5C15.7 5.5 9 12.1 9 20.3c0 10.6 15 22.2 15 22.2s15-11.6 15-22.2C39 12.1 32.3 5.5 24 5.5Z" fill="currentColor"/><path d="m16 24 8-6.5 8 6.5v7.5h-5.1v-5.2h-5.8v5.2H16V24Z" fill="#fff"/></svg></span><span>Addis <b>Kiray</b></span></div>}
-export default function ListingWorkflow(){const[step,setStep]=useState(0),[published,setPublished]=useState(false);const next=()=>step<steps.length-1?setStep(step+1):setPublished(true);if(published)return <main className="landlord-flow"><header><Logo/><Link to="/">Exit</Link></header><section className="publish-success"><span><I n="check"/></span><p className="eyebrow">LISTING PUBLISHED</p><h1>Your property is ready<br/>to be discovered.</h1><p>We’ll notify you when a tenant sends an inquiry or requests a viewing. Keep availability up to date so renters have the clearest information.</p><div className="listing-status"><article><b>1</b><span>Inquiry</span><small>Answer interested tenants</small></article><article><b>2</b><span>Viewing</span><small>Confirm an appointment</small></article><article><b>3</b><span>Availability update</span><small>Keep your listing current</small></article><article><b>4</b><span>Rented</span><small>Close the listing when it’s taken</small></article></div><button onClick={()=>setPublished(false)}>Manage listing <I n="arrow"/></button></section></main>;return <main className="landlord-flow"><header><Logo/><div><span>Saved automatically</span><Link to="/">Exit</Link></div></header><div className="flow-wrap"><aside><p className="eyebrow">CREATE LISTING</p><h2>List your<br/>property.</h2><ol>{steps.map((x,i)=><li key={x} className={i===step?"current":i<step?"complete":""}><i>{i<step?<I n="check"/>:i+1}</i><button onClick={()=>i<=step&&setStep(i)}>{x}</button></li>)}</ol></aside><section className="flow-card"><div className="flow-head"><p className="eyebrow">STEP {step+1} OF {steps.length}</p><h1>{steps[step]}</h1><p>{["Start with the essentials renters need to understand your home.","Help tenants understand where the property is and what’s nearby.","Good photos help renters see a place clearly before they visit.","Select the features already available at this property.","Set expectations clearly before a tenant gets in touch.","Turn the details you entered into a helpful, honest description.","Review the listing as a tenant will see it.","Help us verify the listing information you’ve provided.","Everything looks ready. Publish when you’re comfortable."][step]}</p></div>{step===0&&<div className="form-grid"><label>Property title<input defaultValue="Sunlit Two-Bedroom Apartment"/></label><label>Property type<select defaultValue="Apartment"><option>Apartment</option><option>House</option></select></label><label>Bedrooms<input defaultValue="2"/></label><label>Bathrooms<input defaultValue="2"/></label><label>Area (m²)<input defaultValue="92"/></label></div>}{step===1&&<div className="location-select"><I n="pin"/><div><b>Bole, Addis Ababa</b><span>Near Bole Medhanealem</span></div><button>Change location</button></div>}{step===2&&<div className="upload"><I n="photo"/><b>Add property photos</b><p>Use clear, well-lit photos of each room. You can add a video too.</p><button>Choose photos</button><small>JPG, PNG or MP4 · up to 20 items</small></div>}{step===3&&<div className="amenity-select">{["Parking","Water","Electricity","Internet","Security","Elevator","Balcony","Kitchen","Generator","CCTV"].map((x,i)=><button className={i<6?"selected":""} key={x}>{i<6&&"✓ "}{x}</button>)}</div>}{step===4&&<div className="form-grid"><label>Monthly rent (ETB)<input defaultValue="42,000"/></label><label>Minimum term<select><option>12 months</option></select></label><label>Availability<select><option>Available now</option><option>Available soon</option></select></label><label>Furnishing<select><option>Partially furnished</option></select></label></div>}{step===5&&<div className="ai-description"><span>✦ AI-assisted</span><textarea defaultValue="A bright, well-kept two-bedroom apartment in Bole with a practical kitchen, reliable utilities, and easy access to everyday amenities. The home is ready for tenants who value a calm, connected location."/><small>Review every detail for accuracy before publishing.</small></div>}{step===6&&<div className="preview-card"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80" alt="Property preview"/><div><span>✓ Property information complete</span><h2>Sunlit Two-Bedroom Apartment</h2><p>Bole, Addis Ababa</p><b>ETB 42,000 / month</b></div></div>}{step===7&&<div className="verify-flow"><span><I n="check"/></span><h2>Ready for verification</h2><p>We’ll review the property information and may ask for additional details. Verification is a completed check, not a guarantee of safety.</p><button>Start verification</button></div>}{step===8&&<div className="publish-review"><I n="home"/><h2>Ready to publish</h2><p>Your listing includes property details, location, photos, amenities, rental terms, and a reviewed description.</p><span>✓ Listing information complete</span><span>✓ Verification submitted</span></div>}<div className="flow-actions"><button disabled={step===0} onClick={()=>setStep(step-1)}>Back</button><button onClick={next}>{step===steps.length-1?"Publish property":"Continue"} <I n="arrow"/></button></div></section></div></main>}
+import { Link, useNavigate } from "react-router";
+import Logo from "./components/Logo";
+import Icon from "./components/Icon";
+
+const steps = [
+  "Property information",
+  "Location",
+  "Photos",
+  "Amenities",
+  "Rental terms",
+  "AI-assisted description",
+  "Preview",
+  "Verification",
+  "Publish",
+];
+
+const availableAmenities = [
+  "Parking",
+  "Water",
+  "Electricity",
+  "Internet",
+  "Security",
+  "Elevator",
+  "Balcony",
+  "Kitchen",
+  "Generator",
+  "CCTV",
+  "Compound",
+  "Furnished",
+];
+
+export default function ListingWorkflow() {
+  const [step, setStep] = useState(0);
+  const [published, setPublished] = useState(false);
+  const nav = useNavigate();
+
+  // Form states
+  const [title, setTitle] = useState("Sunlit Two-Bedroom Apartment");
+  const [propertyType, setPropertyType] = useState("Apartment");
+  const [bedrooms, setBedrooms] = useState("2");
+  const [bathrooms, setBathrooms] = useState("2");
+  const [area, setArea] = useState("92");
+  const [location, setLocation] = useState("Bole, Addis Ababa");
+  const [landmark, setLandmark] = useState("Near Bole Medhanealem");
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([
+    "Parking",
+    "Water",
+    "Electricity",
+    "Internet",
+    "Security",
+    "Elevator",
+  ]);
+  const [rent, setRent] = useState("42,000");
+  const [minTerm, setMinTerm] = useState("12 months");
+  const [availability, setAvailability] = useState("Available now");
+  const [furnishing, setFurnishing] = useState("Partially furnished");
+  const [description, setDescription] = useState(
+    "A bright, well-kept two-bedroom apartment in Bole with a practical kitchen, reliable utilities, backup water tank, and easy access to everyday amenities. The home is ready for tenants who value a calm, connected location."
+  );
+
+  const toggleAmenity = (item: string) => {
+    setSelectedAmenities((prev) =>
+      prev.includes(item) ? prev.filter((x) => x !== item) : [...prev, item]
+    );
+  };
+
+  const next = () =>
+    step < steps.length - 1 ? setStep(step + 1) : setPublished(true);
+
+  if (published) {
+    return (
+      <main className="landlord-flow">
+        <header>
+          <Logo to="/" />
+          <Link to="/">Exit to Home</Link>
+        </header>
+        <section className="publish-success">
+          <span>
+            <Icon name="check" />
+          </span>
+          <p className="eyebrow">LISTING PUBLISHED SUCCESSFULLY</p>
+          <h1>
+            Your property is ready
+            <br />
+            to be discovered.
+          </h1>
+          <p>
+            We’ll notify you when a tenant sends an inquiry or requests a viewing. Keep availability up to date so renters have the clearest information.
+          </p>
+          <div className="listing-status">
+            <article>
+              <b>1</b>
+              <span>Inquiry</span>
+              <small>Answer interested tenants</small>
+            </article>
+            <article>
+              <b>2</b>
+              <span>Viewing</span>
+              <small>Confirm an appointment</small>
+            </article>
+            <article>
+              <b>3</b>
+              <span>Availability update</span>
+              <small>Keep your listing current</small>
+            </article>
+            <article>
+              <b>4</b>
+              <span>Rented</span>
+              <small>Close listing when taken</small>
+            </article>
+          </div>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+            <button
+              onClick={() => nav("/property/sunlit-2bed")}
+              type="button"
+            >
+              View Live Listing <Icon name="arrow" />
+            </button>
+            <button
+              onClick={() => nav("/admin")}
+              type="button"
+              className="btn outline"
+              style={{ background: "#ffffff" }}
+            >
+              Admin Moderation View
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="landlord-flow">
+      <header>
+        <Logo to="/" />
+        <div>
+          <span>Saved automatically</span>
+          <Link to="/">Exit</Link>
+        </div>
+      </header>
+      <div className="flow-wrap">
+        <aside>
+          <p className="eyebrow">CREATE LISTING</p>
+          <h2>
+            List your
+            <br />
+            property.
+          </h2>
+          <ol>
+            {steps.map((x, i) => (
+              <li
+                key={x}
+                className={
+                  i === step ? "current" : i < step ? "complete" : ""
+                }
+              >
+                <i>{i < step ? <Icon name="check" /> : i + 1}</i>
+                <button
+                  onClick={() => i <= step && setStep(i)}
+                  type="button"
+                >
+                  {x}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </aside>
+        <section className="flow-card">
+          <div className="flow-head">
+            <p className="eyebrow">
+              STEP {step + 1} OF {steps.length}
+            </p>
+            <h1>{steps[step]}</h1>
+            <p>
+              {[
+                "Start with the essentials renters need to understand your home.",
+                "Help tenants understand where the property is and what’s nearby.",
+                "Good photos help renters see a place clearly before they visit.",
+                "Select the features already available at this property.",
+                "Set expectations clearly before a tenant gets in touch.",
+                "Turn the details you entered into a helpful, honest description.",
+                "Review the listing as a tenant will see it.",
+                "Help us verify the listing information you’ve provided.",
+                "Everything looks ready. Publish when you’re comfortable.",
+              ][step]}
+            </p>
+          </div>
+
+          {step === 0 && (
+            <div className="form-grid">
+              <label>
+                Property title
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </label>
+              <label>
+                Property type
+                <select
+                  value={propertyType}
+                  onChange={(e) => setPropertyType(e.target.value)}
+                >
+                  <option>Apartment</option>
+                  <option>Standalone House</option>
+                  <option>Condominium</option>
+                  <option>Studio</option>
+                  <option>Villa</option>
+                </select>
+              </label>
+              <label>
+                Bedrooms
+                <input
+                  value={bedrooms}
+                  onChange={(e) => setBedrooms(e.target.value)}
+                />
+              </label>
+              <label>
+                Bathrooms
+                <input
+                  value={bathrooms}
+                  onChange={(e) => setBathrooms(e.target.value)}
+                />
+              </label>
+              <label>
+                Area (m²)
+                <input
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div style={{ padding: "20px 30px" }}>
+              <div className="location-select" style={{ margin: 0 }}>
+                <Icon name="pin" />
+                <div>
+                  <b>{location}</b>
+                  <span>{landmark}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newLoc = prompt("Enter sub-city / area:", location);
+                    if (newLoc) setLocation(newLoc);
+                  }}
+                >
+                  Change location
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="upload">
+              <Icon name="photo" />
+              <b>Add property photos</b>
+              <p>
+                Use clear, well-lit photos of each room. You can add a video too.
+              </p>
+              <button
+                type="button"
+                onClick={() => alert("Photo selector opened (demo simulation)")}
+              >
+                Choose photos
+              </button>
+              <small>JPG, PNG or MP4 · up to 20 items</small>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="amenity-select">
+              {availableAmenities.map((x) => {
+                const isSelected = selectedAmenities.includes(x);
+                return (
+                  <button
+                    className={isSelected ? "selected" : ""}
+                    key={x}
+                    onClick={() => toggleAmenity(x)}
+                    type="button"
+                  >
+                    {isSelected && "✓ "}
+                    {x}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="form-grid">
+              <label>
+                Monthly rent (ETB)
+                <input
+                  value={rent}
+                  onChange={(e) => setRent(e.target.value)}
+                />
+              </label>
+              <label>
+                Minimum term
+                <select
+                  value={minTerm}
+                  onChange={(e) => setMinTerm(e.target.value)}
+                >
+                  <option>6 months</option>
+                  <option>12 months</option>
+                  <option>24 months</option>
+                </select>
+              </label>
+              <label>
+                Availability
+                <select
+                  value={availability}
+                  onChange={(e) => setAvailability(e.target.value)}
+                >
+                  <option>Available now</option>
+                  <option>Available next month</option>
+                  <option>Available soon</option>
+                </select>
+              </label>
+              <label>
+                Furnishing
+                <select
+                  value={furnishing}
+                  onChange={(e) => setFurnishing(e.target.value)}
+                >
+                  <option>Unfurnished</option>
+                  <option>Partially furnished</option>
+                  <option>Fully furnished</option>
+                </select>
+              </label>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="ai-description">
+              <span>✦ AI-assisted description</span>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <small>Review details for accuracy before publishing.</small>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDescription(
+                      `A bright ${bedrooms}-bedroom ${propertyType.toLowerCase()} in ${location} featuring ${selectedAmenities.join(", ")}. Monthly rent is ${rent} ETB. Close to everyday transportation and quiet residential surroundings.`
+                    )
+                  }
+                  style={{ border: "none", background: "transparent", color: "#087d70", fontSize: "10px", fontWeight: 800, cursor: "pointer" }}
+                >
+                  ✦ Regenerate with AI
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 6 && (
+            <div className="preview-card">
+              <img
+                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80"
+                alt="Property preview"
+              />
+              <div>
+                <span>✓ Property information complete</span>
+                <h2>{title}</h2>
+                <p>
+                  {location} • {bedrooms} beds • {bathrooms} baths • {area} m²
+                </p>
+                <b>ETB {rent} / month</b>
+              </div>
+            </div>
+          )}
+
+          {step === 7 && (
+            <div className="verify-flow">
+              <span>
+                <Icon name="check" />
+              </span>
+              <h2>Ready for verification</h2>
+              <p>
+                We’ll review the property information and may ask for ownership documents. Verification communicates a completed check, not a guarantee of safety.
+              </p>
+              <button type="button" onClick={() => setStep(step + 1)}>
+                Submit for Verification
+              </button>
+            </div>
+          )}
+
+          {step === 8 && (
+            <div className="publish-review">
+              <Icon name="home" />
+              <h2>Ready to publish</h2>
+              <p>
+                Your listing includes property details, location, photos, amenities, rental terms, and a reviewed description.
+              </p>
+              <span>✓ Listing information complete</span>
+              <span>✓ Verification submitted</span>
+            </div>
+          )}
+
+          <div className="flow-actions">
+            <button
+              disabled={step === 0}
+              onClick={() => setStep(step - 1)}
+              type="button"
+            >
+              Back
+            </button>
+            <button onClick={next} type="button">
+              {step === steps.length - 1 ? "Publish property" : "Continue"}{" "}
+              <Icon name="arrow" />
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}

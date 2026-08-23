@@ -1,5 +1,165 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
-function I({n}:{n:string}){const p:Record<string,React.ReactNode>={mail:<><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></>,check:<path d="m5 12 4.2 4.2L19 6.5"/>,arrow:<path d="M19 12H5m6-6-6 6 6 6"/>,copy:<><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M15 9V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h4"/></>,refresh:<path d="M20 11a8 8 0 1 0 2 5.3M20 4v7h-7"/>};return <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{p[n]}</svg>}
-function Logo(){return <div className="logo"><span className="mark"><svg viewBox="0 0 48 48"><path d="M24 5.5C15.7 5.5 9 12.1 9 20.3c0 10.6 15 22.2 15 22.2s15-11.6 15-22.2C39 12.1 32.3 5.5 24 5.5Z" fill="currentColor"/><path d="m16 24 8-6.5 8 6.5v7.5h-5.1v-5.2h-5.8v5.2H16V24Z" fill="#fff"/></svg></span><span>Addis <b>Kiray</b></span></div>}
-export default function EmailVerification(){const[seconds,setSeconds]=useState(45);const[state,setState]=useState<"pending"|"sent"|"verified"|"expired">("pending");useEffect(()=>{if(seconds<=0)return;const timer=setInterval(()=>setSeconds(x=>x-1),1000);return()=>clearInterval(timer)},[seconds]);const resend=()=>{setSeconds(45);setState("sent")};return <main className="auth-page"><section className="auth-visual"><Logo/><div className="auth-map"><div className="auth-grid"/><span className="visual-pin one">⌂</span><span className="visual-pin two">⌂</span><span className="visual-label l1">Bole</span><span className="visual-label l2">Kazanchis</span><div className="visual-card"><I n="check"/><b>One more step</b><span>Verify your email to begin saving homes and requesting viewings.</span></div></div><div className="auth-caption"><p>ADDIS KIRAY / ACCOUNT SETUP</p><h1>A place for<br/><i>every next step.</i></h1></div></section><section className="auth-panel"><div className="auth-mobile-logo"><Logo/></div><div className="auth-form"><Link to="/" className="back"><I n="arrow"/> Back to Addis Kiray</Link>{state==="verified"?<><div className="auth-icon success"><I n="check"/></div><p className="auth-kicker">EMAIL VERIFIED</p><h2>You’re all set.</h2><p className="auth-copy">Your email is verified. You can now continue setting up your Addis Kiray account.</p><Link to="/search" className="auth-primary">Continue <span>→</span></Link></>:state==="expired"?<><div className="auth-icon warning"><I n="mail"/></div><p className="auth-kicker">LINK EXPIRED</p><h2>This verification link has expired.</h2><p className="auth-copy">Verification links are time-limited to help protect your account. We can send a fresh one to your inbox.</p><button className="auth-primary" onClick={resend}>Send a new link <I n="refresh"/></button></>:<><div className="auth-icon"><I n="mail"/></div><p className="auth-kicker">VERIFY YOUR EMAIL</p><h2>Check your email</h2><p className="auth-copy">We’ve sent a verification link to your email address.</p><div className="email-chip"><span>a••••@example.com</span><button onClick={()=>navigator.clipboard?.writeText("a••••@example.com")} aria-label="Copy email"><I n="copy"/></button></div><button className="auth-primary" onClick={()=>setState("verified")}>Open email <span>↗</span></button><div className="auth-divider"><span>or</span></div>{seconds>0?<p className="resend-wait">Resend in <b>{seconds}s</b></p>:<button className="resend" onClick={resend}><I n="refresh"/> Resend verification email</button>}{state==="sent"&&<p className="sent"><I n="check"/> A new verification email has been sent.</p>}<button className="change-email">Change email</button><div className="auth-test"><span>Demo states</span><button onClick={()=>setState("verified")}>Verified</button><button onClick={()=>setState("expired")}>Expired</button></div></>}<p className="auth-help">Didn’t receive it? Check your spam folder or <button onClick={resend}>resend the email</button>.</p></div><div className="auth-footer"><span>© Addis Kiray</span><span>English / አማርኛ</span><a>Privacy</a><a>Help</a></div></section></main>}
+import { Link, useNavigate } from "react-router";
+import Logo from "./components/Logo";
+import Icon from "./components/Icon";
+
+export default function EmailVerification() {
+  const [seconds, setSeconds] = useState(45);
+  const [state, setState] = useState<"pending" | "sent" | "verified" | "expired">("pending");
+  const nav = useNavigate();
+
+  useEffect(() => {
+    if (seconds <= 0) return;
+    const timer = setInterval(() => setSeconds((x) => x - 1), 1000);
+    return () => clearInterval(timer);
+  }, [seconds]);
+
+  const resend = () => {
+    setSeconds(45);
+    setState("sent");
+  };
+
+  return (
+    <main className="auth-page">
+      <section className="auth-visual">
+        <Logo to="/" />
+        <div className="auth-map">
+          <div className="auth-grid" />
+          <span className="visual-pin one">⌂</span>
+          <span className="visual-pin two">⌂</span>
+          <span className="visual-label l1">Bole</span>
+          <span className="visual-label l2">Kazanchis</span>
+          <div className="visual-card">
+            <Icon name="check" />
+            <b>One more step</b>
+            <span>
+              Verify your email to begin saving homes, contacting landlords, and scheduling viewings.
+            </span>
+          </div>
+        </div>
+        <div className="auth-caption">
+          <p>ADDIS KIRAY / ACCOUNT SETUP</p>
+          <h1>
+            A place for
+            <br />
+            <i>every next step.</i>
+          </h1>
+        </div>
+      </section>
+
+      <section className="auth-panel">
+        <div className="auth-mobile-logo">
+          <Logo to="/" />
+        </div>
+        <div className="auth-form">
+          <Link to="/" className="back">
+            <Icon name="arrow" /> Back to Addis Kiray
+          </Link>
+          {state === "verified" ? (
+            <>
+              <div className="auth-icon success">
+                <Icon name="check" />
+              </div>
+              <p className="auth-kicker">EMAIL VERIFIED</p>
+              <h2>You’re all set.</h2>
+              <p className="auth-copy">
+                Your account is verified. You can now access tenant features, save homes, and request viewings.
+              </p>
+              <button
+                type="button"
+                onClick={() => nav("/tenant")}
+                className="auth-primary"
+              >
+                Continue to Tenant Home <span>→</span>
+              </button>
+            </>
+          ) : state === "expired" ? (
+            <>
+              <div className="auth-icon warning">
+                <Icon name="mail" />
+              </div>
+              <p className="auth-kicker">LINK EXPIRED</p>
+              <h2>This verification link has expired.</h2>
+              <p className="auth-copy">
+                Verification links are time-limited to help protect your account. We can send a fresh one to your inbox.
+              </p>
+              <button className="auth-primary" onClick={resend} type="button">
+                Send a new link <Icon name="refresh" />
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="auth-icon">
+                <Icon name="mail" />
+              </div>
+              <p className="auth-kicker">VERIFY YOUR EMAIL</p>
+              <h2>Check your inbox</h2>
+              <p className="auth-copy">
+                We’ve sent a verification link to your registered email address.
+              </p>
+              <div className="email-chip">
+                <span>alem••••@gmail.com</span>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard?.writeText("alem.mengistu@gmail.com")}
+                  aria-label="Copy email"
+                >
+                  <Icon name="copy" />
+                </button>
+              </div>
+              <button
+                className="auth-primary"
+                onClick={() => setState("verified")}
+                type="button"
+              >
+                Confirm Verification <span>↗</span>
+              </button>
+              <div className="auth-divider">
+                <span>or</span>
+              </div>
+              {seconds > 0 ? (
+                <p className="resend-wait">
+                  Resend in <b>{seconds}s</b>
+                </p>
+              ) : (
+                <button className="resend" onClick={resend} type="button">
+                  <Icon name="refresh" /> Resend verification email
+                </button>
+              )}
+              {state === "sent" && (
+                <p className="sent">
+                  <Icon name="check" /> A new verification email has been sent.
+                </p>
+              )}
+              <Link to="/register" className="change-email" style={{ display: "block", textAlign: "center" }}>
+                Change email address
+              </Link>
+              <div className="auth-test">
+                <span>Demo shortcuts:</span>
+                <button onClick={() => setState("verified")} type="button">
+                  Simulate Verified
+                </button>
+                <button onClick={() => setState("expired")} type="button">
+                  Simulate Expired
+                </button>
+              </div>
+            </>
+          )}
+          <p className="auth-help">
+            Didn’t receive it? Check your spam folder or{" "}
+            <button onClick={resend} type="button">
+              resend the email
+            </button>
+            .
+          </p>
+        </div>
+        <div className="auth-footer">
+          <span>© Addis Kiray</span>
+          <span>English / አማርኛ</span>
+          <Link to="/trust-safety">Privacy</Link>
+          <Link to="/trust-safety">Help</Link>
+        </div>
+      </section>
+    </main>
+  );
+}

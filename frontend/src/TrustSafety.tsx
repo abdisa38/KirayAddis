@@ -1,4 +1,224 @@
 import { useState } from "react";
-import { Link } from "react-router";
-function I({n}:{n:string}){const p:Record<string,React.ReactNode>={shield:<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>,check:<path d="m5 12 4.2 4.2L19 6.5"/>,arrow:<path d="M4 12h16m-6-6 6 6-6 6"/>,flag:<path d="M5 21V4m0 1h10l-1 4 1 4H5"/>,lock:<><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>};return <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{p[n]}</svg>}
-export default function TrustSafety(){const[tab,setTab]=useState('Before contacting'),[report,setReport]=useState(false),[sent,setSent]=useState(false);const safety:{[key:string]:string[]}={'Before contacting':['Keep conversations on Addis Kiray whenever possible.','Ask clear questions about availability, rent, deposit, and utilities.','Treat unusually urgent requests with care.'],'Before viewing':['Confirm the property address and viewing time.','Tell someone you trust where you are going.','Avoid sending payment before you have seen the property and agreed terms.'],'Before paying':['Review the rental terms carefully.','Confirm the person and property information match what you were shown.','Keep records of your conversations and payment agreements.']};return <main className="trust-page"><header><Link to="/">Addis <b>Kiray</b></Link><nav><Link to="/search">Find a Home</Link><Link to="/messages">Messages</Link><span>Trust & Safety</span></nav><button onClick={()=>setReport(true)}><I n="flag"/> Report a concern</button></header><section className="trust-hero"><div><p>TRUST & SAFETY</p><h1>Clear signals.<br/><i>Better decisions.</i></h1><span>Understand what has been verified, what still needs confirming, and how to stay safer while renting in Addis Ababa.</span></div><div className="shield-card"><I n="shield"/><b>Verification helps make information clearer.</b><p>It does not guarantee safety, ownership, availability, or a rental outcome.</p></div></section><section className="trust-wrap"><div className="trust-title"><div><p>PROPERTY TRUST SUMMARY</p><h2>Modern Two-Bedroom Apartment</h2><span>Bole, Addis Ababa</span></div><b>Available now</b></div><div className="trust-grid"><article className="profile"><div className="avatar">AT</div><div><p>LISTED BY</p><h3>Abebe Tesfaye</h3><span>Member since 2024 · 2 active listings</span></div><button>View profile <I n="arrow"/></button></article><article className="trust-signals"><p>WHAT WE KNOW</p>{[['Identity','Verified'],['Phone','Verified'],['Email','Verified'],['Property information','Under review']].map(([x,s],i)=><div key={x}><span className={i===3?'pending':''}><I n={i===3?'shield':'check'}/></span><b>{x}</b><small>{s}</small></div>)}<a>View verification details →</a></article></div><section className="missing"><div><p>INFORMATION TO CONFIRM</p><h2>Some details aren’t specified in this listing.</h2><span>Ask the landlord directly before making a decision.</span></div><div>{['Deposit','Utility costs','Lease terms','Parking','Water availability','Exact move-in date'].map(x=><button key={x}>{x}<small>Not specified</small></button>)}</div></section><section className="safety"><div className="safety-head"><p>SAFETY CENTER</p><h2>Practical steps for your rental journey.</h2><span>Use these as a guide, and follow your own judgment.</span></div><nav>{Object.keys(safety).map(x=><button onClick={()=>setTab(x)} className={tab===x?'active':''} key={x}>{x}</button>)}</nav><div className="safety-list">{safety[tab].map((x,i)=><article key={x}><b>0{i+1}</b><span>{x}</span></article>)}</div></section><section className="report-banner"><I n="flag"/><div><h2>Something doesn’t feel right?</h2><p>Reports help us review information and take appropriate action. We handle them carefully.</p></div><button onClick={()=>setReport(true)}>Report a property or user <I n="arrow"/></button></section><section className="security"><I n="lock"/><div><p>ACCOUNT SECURITY</p><h2>Keep your account protected.</h2><span>Review your active sessions and enable additional account protection when it’s available.</span></div><button>Security settings →</button></section></section>{report&&<div className="trust-modal"><div>{sent?<><span className="success"><I n="check"/></span><h2>Report received</h2><p>Thank you. We’ll review the information you shared carefully.</p><button onClick={()=>{setReport(false);setSent(false)}}>Close</button></>:<><button className="x" onClick={()=>setReport(false)}>×</button><p>REPORT A CONCERN</p><h2>Help us understand what happened.</h2><select><option>Choose a reason</option><option>Incorrect information</option><option>Property unavailable</option><option>Suspicious listing</option><option>Misleading photos</option></select><textarea placeholder="Add details that may help us review this (optional)"/><small>Only share information you are comfortable providing. We review reports carefully.</small><button onClick={()=>setSent(true)}>Submit report</button></>}</div></div>}</main>}
+import { Link, useNavigate } from "react-router";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Icon from "./components/Icon";
+
+export default function TrustSafety() {
+  const [tab, setTab] = useState("Before contacting");
+  const [report, setReport] = useState(false);
+  const [sent, setSent] = useState(false);
+  const nav = useNavigate();
+
+  const safety: { [key: string]: string[] } = {
+    "Before contacting": [
+      "Keep conversations on Addis Kiray whenever possible for audit and record preservation.",
+      "Ask clear questions about water reservoir backup, generator reliability, deposit terms, and lease contract length.",
+      "Treat unusually urgent demands for advance money transfer before physical viewing with extreme caution.",
+    ],
+    "Before viewing": [
+      "Confirm the exact property address, landmark, and viewing appointment time on Addis Kiray.",
+      "Tell a friend or family member where you are going when inspecting properties.",
+      "Avoid sending advance broker or viewing fees before you have physically inspected the premises.",
+    ],
+    "Before paying": [
+      "Review the written rental contract terms thoroughly including maintenance liabilities.",
+      "Confirm the landlord's government ID matches the property ownership title or verified representation.",
+      "Keep digital banking transfer receipts (e.g. Telebirr, CBE) and request a signed physical receipt.",
+    ],
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f8faf9" }}>
+      <Navbar />
+
+      <main className="trust-page" style={{ flex: 1 }}>
+        <section className="trust-hero">
+          <div>
+            <p>TRUST & SAFETY CENTER</p>
+            <h1>
+              Clear signals.
+              <br />
+              <i>Better decisions.</i>
+            </h1>
+            <span>
+              Understand what has been verified, what still needs confirming, and how to stay protected while discovering and renting homes in Addis Ababa.
+            </span>
+          </div>
+          <div className="shield-card">
+            <Icon name="shield" />
+            <b>Verification helps make listing data clear.</b>
+            <p>
+              It communicates a completed check on identity and details — not an absolute guarantee of safety or ownership.
+            </p>
+          </div>
+        </section>
+
+        <section className="trust-wrap">
+          <div className="trust-title">
+            <div>
+              <p>PROPERTY TRUST SUMMARY EXAMPLE</p>
+              <h2>Sunlit Two-Bedroom Apartment</h2>
+              <span>Bole, Addis Ababa</span>
+            </div>
+            <b>● Available now</b>
+          </div>
+
+          <div className="trust-grid">
+            <article className="profile">
+              <div className="avatar">KM</div>
+              <div>
+                <p>LISTED BY</p>
+                <h3>Kalkidan M.</h3>
+                <span>Member since 2024 · Verified Landlord</span>
+              </div>
+              <button type="button" onClick={() => nav("/messages")}>
+                Message landlord <Icon name="arrow" />
+              </button>
+            </article>
+
+            <article className="trust-signals">
+              <p>WHAT WE HAVE VERIFIED</p>
+              {[
+                ["Identity", "Government ID Verified"],
+                ["Phone Number", "SMS OTP Verified"],
+                ["Property Photos", "Metadata & Geotag Checked"],
+                ["Premises Review", "Admin Reviewed"],
+              ].map(([x, s]) => (
+                <div key={x}>
+                  <span>
+                    <Icon name="check" />
+                  </span>
+                  <b>{x}</b>
+                  <small>{s}</small>
+                </div>
+              ))}
+              <Link to="/search" style={{ color: "#087d70", fontSize: "10px", fontWeight: 800, textDecoration: "none" }}>
+                Browse verified properties only →
+              </Link>
+            </article>
+          </div>
+
+          <section className="missing">
+            <div>
+              <p>INFORMATION TO CONFIRM</p>
+              <h2>Key details to ask before signing:</h2>
+              <span>Always ask the landlord directly on Addis Kiray before committing.</span>
+            </div>
+            <div>
+              {[
+                "Advance deposit months",
+                "Utility water/power billing",
+                "Minimum lease length",
+                "Dedicated parking space",
+                "Generator fuel sharing",
+                "Exact move-in date",
+              ].map((x) => (
+                <button key={x} type="button">
+                  {x}
+                  <small>Check with landlord</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="safety">
+            <div className="safety-head">
+              <p>RENTAL SAFETY GUIDE</p>
+              <h2>Practical steps for your housing search.</h2>
+              <span>Use these recommendations as a trusted guideline.</span>
+            </div>
+            <nav>
+              {Object.keys(safety).map((x) => (
+                <button
+                  onClick={() => setTab(x)}
+                  className={tab === x ? "active" : ""}
+                  key={x}
+                  type="button"
+                >
+                  {x}
+                </button>
+              ))}
+            </nav>
+            <div className="safety-list">
+              {safety[tab].map((x, i) => (
+                <article key={x}>
+                  <b>0{i + 1}</b>
+                  <span>{x}</span>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="report-banner">
+            <Icon name="flag" />
+            <div>
+              <h2>Notice something suspicious or inaccurate?</h2>
+              <p>
+                Tenant reports are reviewed directly by our moderation team within 24 hours to keep the Addis Ababa rental market clean and fair.
+              </p>
+            </div>
+            <button onClick={() => setReport(true)} type="button">
+              Report a listing or user <Icon name="arrow" />
+            </button>
+          </section>
+        </section>
+
+        {report && (
+          <div className="trust-modal">
+            <div>
+              {sent ? (
+                <>
+                  <span className="success">
+                    <Icon name="check" />
+                  </span>
+                  <h2>Report received</h2>
+                  <p>
+                    Thank you for helping keep Addis Kiray safe. Our admin moderation team will investigate this report.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setReport(false);
+                      setSent(false);
+                    }}
+                    type="button"
+                  >
+                    Close
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="x"
+                    onClick={() => setReport(false)}
+                    type="button"
+                  >
+                    ×
+                  </button>
+                  <p>REPORT A CONCERN</p>
+                  <h2>Help us understand the issue</h2>
+                  <select defaultValue="Choose a reason">
+                    <option disabled>Choose a reason</option>
+                    <option>Inaccurate price or location</option>
+                    <option>Property is no longer available</option>
+                    <option>Suspicious or fraudulent landlord request</option>
+                    <option>Misleading photos or amenities</option>
+                  </select>
+                  <textarea placeholder="Add any details that may help our moderation team..." />
+                  <small>
+                    Reports are confidential and reviewed carefully by the admin team.
+                  </small>
+                  <button onClick={() => setSent(true)} type="button">
+                    Submit report for review
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
