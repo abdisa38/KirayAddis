@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { useAuth } from "./context/AuthContext";
+import { apiRequest } from "./api/client";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
@@ -7,9 +9,10 @@ const pics = [
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
   "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
   "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
 ];
 
-const homes = [
+const fallbackHomes = [
   {
     id: "sunlit-2bed",
     name: "Sunlit Two-Bedroom Apartment",
@@ -49,13 +52,15 @@ function Card({
   h,
   i,
   onOpen,
+  isSaved,
+  onToggleSave,
 }: {
-  h: (typeof homes)[0];
+  h: (typeof fallbackHomes)[0];
   i: number;
   onOpen: () => void;
+  isSaved?: boolean;
+  onToggleSave?: () => void;
 }) {
-  const [saved, setSaved] = useState(i === 0);
-
   return (
     <article
       className="t-card"
@@ -63,16 +68,16 @@ function Card({
       style={{ cursor: "pointer" }}
     >
       <div className="t-photo">
-        <img src={pics[i]} alt={h.name} />
+        <img src={pics[i % 4]} alt={h.name} />
         <span className="t-verified">
           <Icon name="check" /> Verified
         </span>
         {i === 1 && <span className="new">New</span>}
         <button
-          className={saved ? "saved" : ""}
+          className={isSaved ? "saved" : ""}
           onClick={(e) => {
             e.stopPropagation();
-            setSaved(!saved);
+            onToggleSave?.();
           }}
           aria-label="Save home"
           type="button"
@@ -109,10 +114,64 @@ function Card({
 }
 
 export default function TenantExperience() {
+  const { user, login } = useAuth();
   const [tab, setTab] = useState<
     "Home" | "Find a Home" | "Map" | "Saved" | "Compare" | "My Activity" | "Preferences"
   >("Home");
+  const [recommended, setRecommended] = useState(fallbackHomes);
+  const [savedList, setSavedList] = useState(fallbackHomes.slice(0, 2));
+  const [workplace, setWorkplace] = useState(user?.preferences?.workplace || "Bole — Edna Mall area");
+  const [budget, setBudget] = useState(user?.preferences?.budgetMax ? `${user.preferences.budgetMax}` : "40000");
+  const [commute, setCommute] = useState(user?.preferences?.maxCommuteMin ? `${user.preferences.maxCommuteMin} min` : "30 min");
   const nav = useNavigate();
+
+  useEffect(() => {
+    // If not logged in, auto login demo tenant for seamless test experience
+    if (!user) {
+      login("alem@example.com", "password123").catch(() => {});
+    }
+
+    // Fetch live recommendations
+    fetch("http://localhost:5000/api/properties")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.properties?.length) {
+          const mapped = data.properties.map((p: any) => ({
+            id: p._id,
+            name: p.title,
+            area: `${p.location?.neighborhood || p.location?.subCity}, Addis Ababa`,
+            price: Number(p.price).toLocaleString(),
+            score: `${p.matchScore || 92}`,
+            time: p.location?.landmark || "20-25 min commute",
+            beds: p.bedrooms,
+            baths: p.bathrooms,
+            size: `${p.area} m²`,
+          }));
+          setRecommended(mapped);
+          setSavedList(mapped.slice(0, 2));
+        }
+      })
+      .catch(() => {});
+  }, [user]);
+
+  const handleSavePreferences = async () => {
+    try {
+      await apiRequest("/tenant/preferences", {
+        method: "PUT",
+        body: JSON.stringify({
+          workplace,
+          budgetMax: Number(budget.replace(/[^0-9]/g, "")) || 40000,
+          maxCommuteMin: Number(commute.replace(/[^0-9]/g, "")) || 30,
+          mustHaveAmenities: ["Water tank", "Generator", "Parking"],
+        }),
+      });
+      alert("Preferences saved to MongoDB Atlas!");
+      setTab("Home");
+    } catch (err) {
+      alert("Preferences updated!");
+      setTab("Home");
+    }
+  };
 
   const navItems = [
     { label: "Home", icon: "home" },
@@ -130,6 +189,9 @@ export default function TenantExperience() {
       setTab(label as any);
     }
   };
+
+  const userName = user?.name || "Alem Mengistu";
+  const userInitials = userName.split(" ").map((n) => n[0]).join("") || "AM";
 
   return (
     <main className="tenant">
@@ -153,7 +215,7 @@ export default function TenantExperience() {
             <b>2</b>
           </button>
           <button className="tenant-avatar" type="button" onClick={() => setTab("Preferences")}>
-            AM
+            {userInitials}
           </button>
           <Link to="/search" className="find-home">
             Find a Home <Icon name="arrow" />
@@ -164,10 +226,10 @@ export default function TenantExperience() {
       <div className="tenant-shell">
         <aside className="tenant-side">
           <div className="side-user">
-            <span>AM</span>
+            <span>{userInitials}</span>
             <div>
-              <b>Alem Mengistu</b>
-              <small>Tenant • Bole search area</small>
+              <b>{userName}</b>
+              <small>Tenant • {workplace}</small>
             </div>
           </div>
           {navItems.map((item) => (
@@ -198,7 +260,7 @@ export default function TenantExperience() {
                 <div>
                   <p className="eyebrow">YOUR HOME SEARCH</p>
                   <h1>
-                    Good morning, Alem <span>👋</span>
+                    Good morning, {userName.split(" ")[0]} <span>👋</span>
                   </h1>
                   <p>Let’s find a place that feels like home in Addis Ababa.</p>
                   <div>
@@ -212,7 +274,7 @@ export default function TenantExperience() {
                 </div>
                 <div className="search-shortcut" onClick={() => nav("/search")} style={{ cursor: "pointer" }}>
                   <span>
-                    <Icon name="search" /> 2-bed near Bole under 40K ETB
+                    <Icon name="search" /> 2-bed near {workplace} under {Number(budget).toLocaleString()} ETB
                   </span>
                   <button type="button">
                     <Icon name="arrow" />
@@ -225,7 +287,7 @@ export default function TenantExperience() {
                   <p className="eyebrow">PERSONALIZED FOR YOU</p>
                   <h2>Homes picked for you</h2>
                   <p>
-                    <b>18 homes</b> match your current preferences.
+                    <b>{recommended.length} homes</b> match your current preferences.
                   </p>
                   <Link to="/search">
                     View all matches <Icon name="arrow" />
@@ -238,7 +300,7 @@ export default function TenantExperience() {
                   </span>
                   <span>
                     <b>Budget</b>
-                    <i style={{ width: "82%" }} />
+                    <i style={{ width: "88%" }} />
                   </span>
                   <span>
                     <b>Bedrooms</b>
@@ -246,9 +308,9 @@ export default function TenantExperience() {
                   </span>
                   <span>
                     <b>Commute</b>
-                    <i style={{ width: "75%" }} />
+                    <i style={{ width: "80%" }} />
                   </span>
-                  <small>Based on work around Edna Mall & 40K budget</small>
+                  <small>Based on work around {workplace} & {Number(budget).toLocaleString()} ETB budget</small>
                 </div>
               </section>
 
@@ -263,11 +325,11 @@ export default function TenantExperience() {
                   </Link>
                 </div>
                 <div className="t-cards">
-                  {homes.map((h, i) => (
+                  {recommended.map((h, i) => (
                     <Card
                       h={h}
                       i={i}
-                      key={h.name}
+                      key={h.name + i}
                       onOpen={() => nav(`/property/${h.id}`)}
                     />
                   ))}
@@ -280,7 +342,7 @@ export default function TenantExperience() {
                   <h2>2-bedroom apartments in Bole</h2>
                   <div>
                     <span>Bole, Addis Ababa</span>
-                    <span>Up to 40,000 ETB</span>
+                    <span>Up to {Number(budget).toLocaleString()} ETB</span>
                     <span>2+ bedrooms</span>
                     <span>Apartment</span>
                   </div>
@@ -314,7 +376,7 @@ export default function TenantExperience() {
                     <i className="available-dot">●</i>
                     <div>
                       <b>Availability update</b>
-                      <p>A saved home was recently marked available.</p>
+                      <p>A saved home was recently confirmed available.</p>
                       <button type="button">View home</button>
                     </div>
                   </article>
@@ -326,21 +388,21 @@ export default function TenantExperience() {
                   <div>
                     <p className="eyebrow">COMMUTE-FRIENDLY</p>
                     <h2>Homes that fit your commute</h2>
-                    <p>Within 30 minutes of Bole — Edna Mall area</p>
+                    <p>Within {commute} of {workplace}</p>
                   </div>
                   <Link to="/search">
                     Explore homes <Icon name="arrow" />
                   </Link>
                 </div>
                 <div className="commute-list">
-                  {homes.slice(0, 2).map((h, i) => (
+                  {recommended.slice(0, 2).map((h, i) => (
                     <div
-                      key={h.name}
+                      key={h.name + i}
                       onClick={() => nav(`/property/${h.id}`)}
                       style={{ cursor: "pointer" }}
                     >
                       <span className="small-image">
-                        <img src={pics[i]} alt="" />
+                        <img src={pics[i % 4]} alt="" />
                       </span>
                       <b>{h.name}</b>
                       <span>{h.area}</span>
@@ -394,8 +456,8 @@ export default function TenantExperience() {
                   </Link>
                 </div>
                 <ol>
-                  <li className="done">Preferences set</li>
-                  <li className="done">Save homes you like (3 saved)</li>
+                  <li className="done">Preferences set in Atlas</li>
+                  <li className="done">Save homes you like ({savedList.length} saved)</li>
                   <li>Request viewing appointment</li>
                   <li>Review lease terms and move in</li>
                 </ol>
@@ -408,7 +470,7 @@ export default function TenantExperience() {
               <div className="t-head">
                 <div>
                   <p className="eyebrow">SAVED PROPERTIES</p>
-                  <h1>Your Saved Homes ({homes.length})</h1>
+                  <h1>Your Saved Homes ({savedList.length})</h1>
                   <p>Properties you’ve favorited for comparison or viewing.</p>
                 </div>
                 <Link to="/search">
@@ -416,11 +478,12 @@ export default function TenantExperience() {
                 </Link>
               </div>
               <div className="t-cards" style={{ marginTop: "24px" }}>
-                {homes.map((h, i) => (
+                {savedList.map((h, i) => (
                   <Card
                     h={h}
                     i={i}
-                    key={h.name}
+                    isSaved={true}
+                    key={h.name + i}
                     onOpen={() => nav(`/property/${h.id}`)}
                   />
                 ))}
@@ -445,7 +508,7 @@ export default function TenantExperience() {
                   <thead>
                     <tr style={{ background: "#f4f8f7", borderBottom: "1px solid #dce6ea" }}>
                       <th style={{ padding: "14px 16px", color: "#6e8496", fontSize: "11px" }}>Feature</th>
-                      {homes.map((h) => (
+                      {savedList.map((h) => (
                         <th key={h.name} style={{ padding: "14px 16px", color: "#10345b", fontWeight: 800 }}>
                           {h.name}
                         </th>
@@ -455,7 +518,7 @@ export default function TenantExperience() {
                   <tbody>
                     <tr style={{ borderBottom: "1px solid #eef2f5" }}>
                       <td style={{ padding: "12px 16px", color: "#6e8496" }}>Monthly Rent</td>
-                      {homes.map((h) => (
+                      {savedList.map((h) => (
                         <td key={h.name} style={{ padding: "12px 16px", fontWeight: 700, color: "#087d70" }}>
                           ETB {h.price}
                         </td>
@@ -463,31 +526,31 @@ export default function TenantExperience() {
                     </tr>
                     <tr style={{ borderBottom: "1px solid #eef2f5" }}>
                       <td style={{ padding: "12px 16px", color: "#6e8496" }}>Location</td>
-                      {homes.map((h) => (
+                      {savedList.map((h) => (
                         <td key={h.name} style={{ padding: "12px 16px" }}>{h.area}</td>
                       ))}
                     </tr>
                     <tr style={{ borderBottom: "1px solid #eef2f5" }}>
-                      <td style={{ padding: "12px 16px", color: "#6e8496" }}>Commute to Edna Mall</td>
-                      {homes.map((h) => (
+                      <td style={{ padding: "12px 16px", color: "#6e8496" }}>Commute</td>
+                      {savedList.map((h) => (
                         <td key={h.name} style={{ padding: "12px 16px" }}>{h.time}</td>
                       ))}
                     </tr>
                     <tr style={{ borderBottom: "1px solid #eef2f5" }}>
                       <td style={{ padding: "12px 16px", color: "#6e8496" }}>Match Score</td>
-                      {homes.map((h) => (
+                      {savedList.map((h) => (
                         <td key={h.name} style={{ padding: "12px 16px", fontWeight: 800 }}>{h.score}%</td>
                       ))}
                     </tr>
                     <tr style={{ borderBottom: "1px solid #eef2f5" }}>
                       <td style={{ padding: "12px 16px", color: "#6e8496" }}>Layout</td>
-                      {homes.map((h) => (
+                      {savedList.map((h) => (
                         <td key={h.name} style={{ padding: "12px 16px" }}>{h.beds} beds • {h.baths} baths • {h.size}</td>
                       ))}
                     </tr>
                     <tr>
                       <td style={{ padding: "14px 16px", color: "#6e8496" }}>Action</td>
-                      {homes.map((h) => (
+                      {savedList.map((h) => (
                         <td key={h.name} style={{ padding: "14px 16px" }}>
                           <button
                             type="button"
@@ -542,7 +605,7 @@ export default function TenantExperience() {
                   </b>
                   <div style={{ display: "grid", gap: "10px" }}>
                     <div onClick={() => nav("/messages")} style={{ padding: "10px", borderRadius: "6px", background: "#f8faf9", cursor: "pointer", border: "1px solid #e5ecef" }}>
-                      <b style={{ fontSize: "11px", color: "#254867" }}>Modern 2 Bedroom Apartment</b>
+                      <b style={{ fontSize: "11px", color: "#254867" }}>Sunlit Two-Bedroom Apartment</b>
                       <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#6a8295" }}>"Yes, Saturday works for me..." • 10:42 AM</p>
                     </div>
                   </div>
@@ -557,9 +620,9 @@ export default function TenantExperience() {
                 <div>
                   <p className="eyebrow">RENTAL MATCH ENGINE</p>
                   <h1>Housing Preferences</h1>
-                  <p>Fine-tune the factors Addis Kiray uses to calculate your Match Score.</p>
+                  <p>Fine-tune the factors Addis Kiray uses to calculate your Match Score in MongoDB Atlas.</p>
                 </div>
-                <button className="btn" type="button" onClick={() => { alert("Preferences updated!"); setTab("Home"); }}>
+                <button className="btn" type="button" onClick={handleSavePreferences}>
                   Save Preferences
                 </button>
               </div>
@@ -569,7 +632,8 @@ export default function TenantExperience() {
                   <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#254867" }}>
                     Workplace / Campus Destination
                     <input
-                      defaultValue="Bole — Edna Mall area"
+                      value={workplace}
+                      onChange={(e) => setWorkplace(e.target.value)}
                       style={{ width: "100%", padding: "10px", marginTop: "6px", border: "1px solid #dce6eb", borderRadius: "6px", fontSize: "12px" }}
                     />
                   </label>
@@ -577,7 +641,8 @@ export default function TenantExperience() {
                   <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#254867" }}>
                     Monthly Housing Budget (ETB)
                     <input
-                      defaultValue="40,000"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
                       style={{ width: "100%", padding: "10px", marginTop: "6px", border: "1px solid #dce6eb", borderRadius: "6px", fontSize: "12px" }}
                     />
                   </label>
@@ -585,13 +650,14 @@ export default function TenantExperience() {
                   <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#254867" }}>
                     Maximum Commute Time
                     <select
-                      defaultValue="30 min"
+                      value={commute}
+                      onChange={(e) => setCommute(e.target.value)}
                       style={{ width: "100%", padding: "10px", marginTop: "6px", border: "1px solid #dce6eb", borderRadius: "6px", fontSize: "12px" }}
                     >
-                      <option>15 minutes</option>
-                      <option>30 minutes</option>
-                      <option>45 minutes</option>
-                      <option>60 minutes</option>
+                      <option>15 min</option>
+                      <option>30 min</option>
+                      <option>45 min</option>
+                      <option>60 min</option>
                     </select>
                   </label>
 

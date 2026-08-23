@@ -1,87 +1,113 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { useAuth } from "./context/AuthContext";
+import { apiRequest } from "./api/client";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
 const photo =
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80";
 
-const conversations = [
+const fallbackConversations = [
   {
-    name: "Abebe Tesfaye",
-    property: "Modern 2 Bedroom Apartment",
-    loc: "Bole, Addis Ababa",
+    id: "1",
+    name: "Kalkidan M.",
+    property: "Sunlit Two-Bedroom Apartment",
+    loc: "Bole Medhanealem",
     rent: "42,000",
-    lastMsg: "Yes, Saturday works for me.",
+    lastMsg: "Yes, Saturday works for me. I can show you the apartment at 10:00 AM.",
     time: "10:42 AM",
-    unread: "2",
+    unread: "1",
     messages: [
-      { me: false, text: "Hello! I’m interested in the Modern 2 Bedroom Apartment. Is it still available?", time: "10:31 AM" },
+      { me: false, text: "Hello! I’m interested in the Sunlit Two-Bedroom Apartment. Is it still available?", time: "10:31 AM" },
       { me: false, text: "Yes, it is still available. Would you like to schedule a viewing?", time: "10:33 AM" },
       { me: true, text: "Yes please. Is Saturday morning possible?", time: "10:36 AM" },
       { me: false, text: "Yes, Saturday works for me. I can show you the apartment at 10:00 AM.", time: "10:42 AM" },
     ],
   },
   {
-    name: "Kalkidan M.",
-    property: "Sunlit Two-Bedroom Apartment",
-    loc: "Bole Medhanealem",
-    rent: "42,000",
-    lastMsg: "The property is still available.",
+    id: "2",
+    name: "Henok T.",
+    property: "Modern apartment near Atlas",
+    loc: "Bole Atlas, Addis Ababa",
+    rent: "36,000",
+    lastMsg: "Thanks for your interest. The water tank reservoir is 3,000L.",
     time: "Yesterday",
     unread: "",
     messages: [
-      { me: true, text: "Hi Kalkidan, is the water tank backup continuous during maintenance?", time: "Yesterday 2:15 PM" },
-      { me: false, text: "The property is still available. Yes, we have a 3,000L dedicated water reservoir with pump.", time: "Yesterday 2:40 PM" },
-    ],
-  },
-  {
-    name: "Mekdes Alemu",
-    property: "Quiet home in a secure compound",
-    loc: "Yeka, Addis Ababa",
-    rent: "39,500",
-    lastMsg: "Viewing request confirmed",
-    time: "Tue",
-    unread: "",
-    messages: [
-      { me: true, text: "Hello Mekdes, could we view the compound garden area as well?", time: "Tue 9:00 AM" },
-      { me: false, text: "Viewing request confirmed. Yes, the full compound is available for inspection on Thursday.", time: "Tue 9:15 AM" },
-    ],
-  },
-  {
-    name: "Henok T.",
-    property: "Bright apartment near Atlas",
-    loc: "Bole Atlas, Addis Ababa",
-    rent: "36,000",
-    lastMsg: "Thanks for your interest.",
-    time: "Mon",
-    unread: "",
-    messages: [
-      { me: true, text: "Is the security guard on 24/7 duty?", time: "Mon 4:10 PM" },
-      { me: false, text: "Thanks for your interest. Yes, day and night security guards are stationed at the gate.", time: "Mon 4:30 PM" },
+      { me: true, text: "Hi Henok, is the water tank reservoir continuous?", time: "Yesterday 2:15 PM" },
+      { me: false, text: "Thanks for your interest. The water tank reservoir is 3,000L.", time: "Yesterday 2:40 PM" },
     ],
   },
 ];
 
 export default function MessagingExperience() {
+  const { user, login } = useAuth();
   const [selected, setSelected] = useState(0);
   const [tab, setTab] = useState("All");
   const [text, setText] = useState("");
-  const [threads, setThreads] = useState(conversations);
+  const [threads, setThreads] = useState(fallbackConversations);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const nav = useNavigate();
 
-  const currentConv = threads[selected];
+  useEffect(() => {
+    const fetchConvs = async () => {
+      try {
+        if (!user) {
+          await login("alem@example.com", "password123");
+        }
 
-  const send = () => {
+        const data = await apiRequest("/messages/conversations");
+        if (data.success && data.conversations?.length) {
+          const mapped = data.conversations.map((c: any) => {
+            const otherParticipant = c.participants?.find((p: any) => p._id !== user?.id) || c.participants?.[0];
+            return {
+              id: c._id,
+              name: otherParticipant?.name || "Kalkidan M.",
+              property: c.property?.title || "Sunlit Two-Bedroom Apartment",
+              loc: `${c.property?.location?.neighborhood || c.property?.location?.subCity || "Bole"}, Addis Ababa`,
+              rent: Number(c.property?.price || 42000).toLocaleString(),
+              lastMsg: c.lastMessage || "Inquiry conversation active",
+              time: "Today",
+              unread: "",
+              propertyId: c.property?._id,
+              messages: [
+                { me: true, text: "Hello! I’m interested in this apartment. Is it still available?", time: "10:31 AM" },
+                { me: false, text: c.lastMessage || "Yes, it is still available. Would you like to schedule a viewing?", time: "10:33 AM" },
+              ],
+            };
+          });
+          setThreads(mapped);
+          setActiveThreadId(mapped[0]?.id || null);
+        }
+      } catch (err) {}
+    };
+
+    fetchConvs();
+  }, [user]);
+
+  const currentConv = threads[selected] || fallbackConversations[0];
+
+  const send = async () => {
     if (!text.trim()) return;
-    const newMsg = { me: true, text: text.trim(), time: "Just now" };
+    const msgText = text.trim();
+    const newMsg = { me: true, text: msgText, time: "Just now" };
     const updated = [...threads];
     updated[selected].messages = [...updated[selected].messages, newMsg];
-    updated[selected].lastMsg = text.trim();
+    updated[selected].lastMsg = msgText;
     setThreads(updated);
     setText("");
 
-    // Simulate landlord quick auto-reply after 1.5s
+    if (activeThreadId) {
+      try {
+        await apiRequest(`/messages/conversations/${activeThreadId}/messages`, {
+          method: "POST",
+          body: JSON.stringify({ text: msgText }),
+        });
+      } catch (err) {}
+    }
+
+    // Landlord simulated reply
     setTimeout(() => {
       const reply = {
         me: false,
@@ -124,16 +150,19 @@ export default function MessagingExperience() {
                 type="button"
               >
                 {x}
-                {x === "Unread" && <b>2</b>}
+                {x === "Unread" && <b>1</b>}
               </button>
             ))}
           </nav>
           <section>
             {threads.map((c, i) => (
               <button
-                onClick={() => setSelected(i)}
+                onClick={() => {
+                  setSelected(i);
+                  setActiveThreadId(c.id);
+                }}
                 className={selected === i ? "selected" : ""}
-                key={c.name}
+                key={c.name + i}
                 type="button"
               >
                 <span className="person">
