@@ -175,7 +175,9 @@ export default function Navbar({
                   to={getUserDashboardPath()}
                   onClick={() => setUserDropdown(false)}
                   style={{
-                    display: "block",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
                     padding: "8px 14px",
                     color: "#173858",
                     fontSize: "12px",
@@ -183,14 +185,17 @@ export default function Navbar({
                     fontWeight: 600,
                   }}
                 >
-                  📊 My {user.role === "landlord" ? "Landlord" : user.role === "admin" ? "Admin" : "Tenant"} Dashboard
+                  <Icon name="chart" />
+                  <span>My {user.role === "landlord" ? "Landlord" : user.role === "admin" ? "Admin" : "Tenant"} Dashboard</span>
                 </Link>
 
                 <Link
                   to="/messages"
                   onClick={() => setUserDropdown(false)}
                   style={{
-                    display: "block",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
                     padding: "8px 14px",
                     color: "#173858",
                     fontSize: "12px",
@@ -198,7 +203,8 @@ export default function Navbar({
                     fontWeight: 600,
                   }}
                 >
-                  💬 Messages & Inquiries
+                  <Icon name="message" />
+                  <span>Messages & Inquiries</span>
                 </Link>
 
                 <button

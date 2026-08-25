@@ -284,12 +284,6 @@ export default function AdminExperience() {
             >
               <Icon name={tab.icon} />
               {tab.label}
-                alignItems: "center",
-                gap: "8px",
-                transition: "all 0.15s ease",
-              }}
-            >
-              {tab.label}
               {tab.count !== null && (
                 <span
                   style={{

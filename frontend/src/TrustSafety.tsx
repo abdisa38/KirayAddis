@@ -122,7 +122,9 @@ export default function TrustSafety() {
               <h2>{propertyTitle}</h2>
               <span>{propertyLocation}</span>
             </div>
-            <b>● {availStatus === "Available" ? "Available now" : availStatus}</b>
+            <b style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <Icon name="check" /> {availStatus === "Available" ? "Available now" : availStatus}
+            </b>
           </div>
 
           <div className="trust-grid">
