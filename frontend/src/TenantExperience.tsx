@@ -2,706 +2,862 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
 import { apiRequest } from "./api/client";
-import Logo from "./components/Logo";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import Icon from "./components/Icon";
 
-const pics = [
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
-];
+interface TenantProperty {
+  _id: string;
+  title: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  propertyType: string;
+  matchScore: number;
+  location: {
+    subCity: string;
+    neighborhood: string;
+    landmark: string;
+  };
+  amenities: string[];
+  media: { url: string; isCover: boolean }[];
+  availability: { status: string };
+  verification: { status: string };
+}
 
-const fallbackHomes = [
-  {
-    id: "sunlit-2bed",
-    name: "Sunlit Two-Bedroom Apartment",
-    area: "Bole, Addis Ababa",
-    price: "42,000",
-    score: "94",
-    time: "24 min commute",
-    beds: 2,
-    baths: 2,
-    size: "92 m²",
-  },
-  {
-    id: "modern-atlas",
-    name: "Modern apartment near Atlas",
-    area: "Bole Atlas, Addis Ababa",
-    price: "36,000",
-    score: "89",
-    time: "18 min commute",
-    beds: 2,
-    baths: 1,
-    size: "85 m²",
-  },
-  {
-    id: "bright-yeka",
-    name: "Bright home with a city view",
-    area: "Yeka, Addis Ababa",
-    price: "29,500",
-    score: "86",
-    time: "28 min commute",
-    beds: 3,
-    baths: 2,
-    size: "110 m²",
-  },
-];
-
-function Card({
-  h,
-  i,
-  onOpen,
-  isSaved,
-  onToggleSave,
-}: {
-  h: (typeof fallbackHomes)[0];
-  i: number;
-  onOpen: () => void;
-  isSaved?: boolean;
-  onToggleSave?: () => void;
-}) {
-  return (
-    <article
-      className="t-card"
-      onClick={onOpen}
-      style={{ cursor: "pointer" }}
-    >
-      <div className="t-photo">
-        <img src={pics[i % 4]} alt={h.name} />
-        <span className="t-verified">
-          <Icon name="check" /> Verified
-        </span>
-        {i === 1 && <span className="new">New</span>}
-        <button
-          className={isSaved ? "saved" : ""}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSave?.();
-          }}
-          aria-label="Save home"
-          type="button"
-        >
-          <Icon name="heart" />
-        </button>
-      </div>
-      <div>
-        <div className="t-card-head">
-          <h3>{h.name}</h3>
-          <span className="t-score">
-            {h.score}%<small>Match</small>
-          </span>
-        </div>
-        <p>
-          <Icon name="pin" />
-          {h.area}
-        </p>
-        <div className="t-facts">
-          <span>{h.beds} beds</span>
-          <span>{h.baths} baths</span>
-          <span>{h.size}</span>
-        </div>
-        <b>
-          ETB {h.price} <em>/ month</em>
-        </b>
-        <small className="commute">
-          <Icon name="map" />
-          {h.time}
-        </small>
-      </div>
-    </article>
-  );
+interface TenantViewing {
+  _id: string;
+  property: {
+    _id: string;
+    title: string;
+    price: number;
+    location: { subCity: string; neighborhood: string };
+    media: { url: string }[];
+  };
+  landlord: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  appointmentDate: string;
+  appointmentTime: string;
+  status: string;
+  notes?: string;
 }
 
 export default function TenantExperience() {
   const { user, login } = useAuth();
-  const [tab, setTab] = useState<
-    "Home" | "Find a Home" | "Map" | "Saved" | "Compare" | "My Activity" | "Preferences"
-  >("Home");
-  const [recommended, setRecommended] = useState(fallbackHomes);
-  const [savedList, setSavedList] = useState(fallbackHomes.slice(0, 2));
-  const [workplace, setWorkplace] = useState(user?.preferences?.workplace || "Bole — Edna Mall area");
-  const [budget, setBudget] = useState(user?.preferences?.budgetMax ? `${user.preferences.budgetMax}` : "40000");
-  const [commute, setCommute] = useState(user?.preferences?.maxCommuteMin ? `${user.preferences.maxCommuteMin} min` : "30 min");
+  const [activeTab, setActiveTab] = useState<"matches" | "saved" | "viewings" | "preferences">("matches");
+  const [recommended, setRecommended] = useState<TenantProperty[]>([]);
+  const [savedHomes, setSavedHomes] = useState<TenantProperty[]>([]);
+  const [viewings, setViewings] = useState<TenantViewing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionMessage, setActionMessage] = useState("");
   const nav = useNavigate();
 
-  useEffect(() => {
-    // If not logged in, auto login demo tenant for seamless test experience
-    if (!user) {
-      login("alem@example.com", "password123").catch(() => {});
-    }
+  // Preference form state
+  const [workplace, setWorkplace] = useState("Bole Edna Mall area");
+  const [budgetMax, setBudgetMax] = useState(40000);
+  const [maxCommuteMin, setMaxCommuteMin] = useState(30);
+  const [mustHaveAmenities, setMustHaveAmenities] = useState<string[]>([
+    "Water tank",
+    "Generator",
+    "24/7 security",
+  ]);
 
-    // Fetch live recommendations
-    fetch("http://localhost:5000/api/properties")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.properties?.length) {
-          const mapped = data.properties.map((p: any) => ({
-            id: p._id,
-            name: p.title,
-            area: `${p.location?.neighborhood || p.location?.subCity}, Addis Ababa`,
-            price: Number(p.price).toLocaleString(),
-            score: `${p.matchScore || 92}`,
-            time: p.location?.landmark || "20-25 min commute",
-            beds: p.bedrooms,
-            baths: p.bathrooms,
-            size: `${p.area} m²`,
-          }));
-          setRecommended(mapped);
-          setSavedList(mapped.slice(0, 2));
-        }
-      })
-      .catch(() => {});
+  const fetchTenantData = async () => {
+    setLoading(true);
+    try {
+      if (!user || user.role !== "tenant") {
+        await login("alem@example.com", "password123");
+      }
+
+      // Fetch recommended listings
+      const propData = await apiRequest("/properties?limit=6");
+      if (propData.success) {
+        setRecommended(propData.properties || []);
+      }
+
+      // Fetch saved favorites
+      const savedData = await apiRequest("/tenant/saved");
+      if (savedData.success) {
+        setSavedHomes(savedData.savedProperties || []);
+      }
+
+      // Fetch scheduled viewings
+      const viewData = await apiRequest("/messages/viewings");
+      if (viewData.success) {
+        setViewings(viewData.viewings || []);
+      }
+
+      // Load user preferences if available
+      if (user?.preferences) {
+        if (user.preferences.workplace) setWorkplace(user.preferences.workplace);
+        if (user.preferences.budgetMax) setBudgetMax(user.preferences.budgetMax);
+        if (user.preferences.maxCommuteMin) setMaxCommuteMin(user.preferences.maxCommuteMin);
+        if (user.preferences.mustHaveAmenities) setMustHaveAmenities(user.preferences.mustHaveAmenities);
+      }
+    } catch (err: any) {
+      console.error("Error fetching tenant data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTenantData();
   }, [user]);
 
-  const handleSavePreferences = async () => {
+  // Toggle favorite
+  const toggleSave = async (propertyId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     try {
-      await apiRequest("/tenant/preferences", {
+      const data = await apiRequest(`/tenant/saved/${propertyId}`, { method: "POST" });
+      if (data.success) {
+        setActionMessage(data.isSaved ? "Property added to your Saved Homes!" : "Property removed from Saved Homes.");
+        setTimeout(() => setActionMessage(""), 3500);
+        // Refresh saved list
+        const savedData = await apiRequest("/tenant/saved");
+        if (savedData.success) {
+          setSavedHomes(savedData.savedProperties || []);
+        }
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to toggle save");
+    }
+  };
+
+  // Save Preferences
+  const savePreferences = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const data = await apiRequest("/tenant/preferences", {
         method: "PUT",
         body: JSON.stringify({
           workplace,
-          budgetMax: Number(budget.replace(/[^0-9]/g, "")) || 40000,
-          maxCommuteMin: Number(commute.replace(/[^0-9]/g, "")) || 30,
-          mustHaveAmenities: ["Water tank", "Generator", "Parking"],
+          budgetMax,
+          maxCommuteMin,
+          mustHaveAmenities,
         }),
       });
-      alert("Preferences saved to MongoDB Atlas!");
-      setTab("Home");
-    } catch (err) {
-      alert("Preferences updated!");
-      setTab("Home");
+      if (data.success) {
+        setActionMessage("Housing match preferences updated & saved to your profile!");
+        setTimeout(() => setActionMessage(""), 3500);
+        // Refresh recommendations
+        const propData = await apiRequest("/properties?limit=6");
+        if (propData.success) {
+          setRecommended(propData.properties || []);
+        }
+        setActiveTab("matches");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to save preferences");
     }
   };
 
-  const navItems = [
-    { label: "Home", icon: "home" },
-    { label: "Find a Home", icon: "search" },
-    { label: "Map", icon: "map" },
-    { label: "Saved", icon: "heart" },
-    { label: "Compare", icon: "sliders" },
-    { label: "My Activity", icon: "calendar" },
-  ];
-
-  const handleNavClick = (label: string) => {
-    if (label === "Find a Home" || label === "Map") {
-      nav("/search");
-    } else {
-      setTab(label as any);
+  // Cancel viewing
+  const cancelViewing = async (id: string) => {
+    if (!window.confirm("Are you sure you want to cancel this viewing appointment?")) return;
+    try {
+      const data = await apiRequest(`/messages/viewings/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+      if (data.success) {
+        setActionMessage("Viewing appointment cancelled.");
+        setTimeout(() => setActionMessage(""), 3500);
+        fetchTenantData();
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to cancel viewing");
     }
   };
 
-  const userName = user?.name || "Alem Mengistu";
-  const userInitials = userName.split(" ").map((n) => n[0]).join("") || "AM";
+  const isHomeSaved = (id: string) => {
+    return savedHomes.some((s) => s._id === id);
+  };
 
   return (
-    <main className="tenant">
-      <header className="tenant-nav">
-        <Logo to="/" />
-        <nav>
-          {navItems.map((item) => (
-            <button
-              className={tab === item.label ? "active" : ""}
-              onClick={() => handleNavClick(item.label)}
-              key={item.label}
-              type="button"
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f8fbfa" }}>
+      <Navbar />
+
+      <main style={{ flex: 1, maxWidth: "1240px", width: "100%", margin: "0 auto", padding: "32px 24px 60px" }}>
+        {/* Welcome Header */}
+        <div
+          style={{
+            background: "linear-gradient(135deg, #0d345b 0%, #174878 100%)",
+            borderRadius: "16px",
+            padding: "28px 32px",
+            color: "#ffffff",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "20px",
+            boxShadow: "0 8px 24px rgba(13, 52, 91, 0.12)",
+            marginBottom: "28px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: "#0b8879",
+                color: "#ffffff",
+                fontSize: "20px",
+                fontWeight: 800,
+                display: "grid",
+                placeItems: "center",
+                border: "2px solid rgba(255,255,255,0.3)",
+              }}
             >
-              {item.label}
+              {user?.name
+                ? user.name
+                    .split(" ")
+                    .map((w) => w[0])
+                    .join("")
+                : "AM"}
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 800 }}>
+                  Welcome back, {user?.name ? user.name.split(" ")[0] : "Alem"}!
+                </h1>
+                <span
+                  style={{
+                    background: "rgba(11, 136, 121, 0.35)",
+                    color: "#8bd9ca",
+                    border: "1px solid #8bd9ca",
+                    padding: "2px 8px",
+                    borderRadius: "99px",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                  }}
+                >
+                  ✓ Verified Renter
+                </span>
+              </div>
+              <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#c2d6e4" }}>
+                Targeting <b>{workplace}</b> · Budget up to <b>ETB {budgetMax.toLocaleString()}</b> · ≤ {maxCommuteMin} min commute
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              onClick={() => nav("/search")}
+              style={{
+                background: "#0b8879",
+                color: "#ffffff",
+                border: "none",
+                padding: "12px 20px",
+                borderRadius: "8px",
+                fontWeight: 800,
+                fontSize: "12px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <Icon name="search" /> Browse Marketplace
             </button>
-          ))}
-        </nav>
-        <div>
-          <button className="notify" type="button" onClick={() => nav("/messages")}>
-            <Icon name="bell" />
-            <b>2</b>
-          </button>
-          <button className="tenant-avatar" type="button" onClick={() => setTab("Preferences")}>
-            {userInitials}
-          </button>
-          <Link to="/search" className="find-home">
-            Find a Home <Icon name="arrow" />
-          </Link>
+            <button
+              onClick={() => nav("/ai")}
+              style={{
+                background: "rgba(255, 255, 255, 0.15)",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.3)",
+                padding: "12px 18px",
+                borderRadius: "8px",
+                fontWeight: 700,
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              ✦ Ask Addis AI
+            </button>
+          </div>
         </div>
-      </header>
 
-      <div className="tenant-shell">
-        <aside className="tenant-side">
-          <div className="side-user">
-            <span>{userInitials}</span>
-            <div>
-              <b>{userName}</b>
-              <small>Tenant • {workplace}</small>
-            </div>
+        {/* Action Alert Banner */}
+        {actionMessage && (
+          <div
+            style={{
+              background: "#e3f7f2",
+              border: "1px solid #0b8879",
+              color: "#075e53",
+              padding: "12px 20px",
+              borderRadius: "8px",
+              marginBottom: "24px",
+              fontSize: "12px",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <Icon name="check" /> {actionMessage}
           </div>
-          {navItems.map((item) => (
+        )}
+
+        {/* Navigation Tabs */}
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            borderBottom: "1px solid #d9e4eb",
+            paddingBottom: "12px",
+            marginBottom: "28px",
+          }}
+        >
+          {[
+            { id: "matches", label: "✨ Recommended for You", count: recommended.length },
+            { id: "saved", label: "❤️ Saved Homes", count: savedHomes.length },
+            { id: "viewings", label: "📅 Scheduled Viewings", count: viewings.length },
+            { id: "preferences", label: "⚙️ Match Preferences", count: null },
+          ].map((tab) => (
             <button
-              className={tab === item.label ? "active" : ""}
-              onClick={() => handleNavClick(item.label)}
-              key={item.label}
-              type="button"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              style={{
+                background: activeTab === tab.id ? "#0d345b" : "#ffffff",
+                color: activeTab === tab.id ? "#ffffff" : "#45627a",
+                border: activeTab === tab.id ? "none" : "1px solid #d4e0e8",
+                padding: "10px 18px",
+                borderRadius: "8px",
+                fontWeight: 700,
+                fontSize: "12px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.15s ease",
+              }}
             >
-              <Icon name={item.icon} />
-              {item.label}
+              {tab.label}
+              {tab.count !== null && (
+                <span
+                  style={{
+                    background: activeTab === tab.id ? "#0b8879" : "#e3edf2",
+                    color: activeTab === tab.id ? "#ffffff" : "#0d345b",
+                    padding: "1px 6px",
+                    borderRadius: "99px",
+                    fontSize: "10px",
+                  }}
+                >
+                  {tab.count}
+                </span>
+              )}
             </button>
           ))}
-          <div className="side-bottom">
-            <button type="button" onClick={() => setTab("Preferences")}>
-              <Icon name="spark" /> Preferences & Match
-            </button>
-            <Link to="/trust-safety" style={{ color: "#778b9a", textDecoration: "none", display: "flex", alignItems: "center", gap: "8px", padding: "8px", fontSize: "9px" }}>
-              <Icon name="shield" /> Safety & Support
-            </Link>
-          </div>
-        </aside>
+        </div>
 
-        <section className="tenant-content">
-          {tab === "Home" && (
-            <>
-              <div className="tenant-greeting">
-                <div>
-                  <p className="eyebrow">YOUR HOME SEARCH</p>
-                  <h1>
-                    Good morning, {userName.split(" ")[0]} <span>👋</span>
-                  </h1>
-                  <p>Let’s find a place that feels like home in Addis Ababa.</p>
-                  <div>
-                    <Link to="/search" className="t-primary">
-                      Find a Home <Icon name="search" />
-                    </Link>
-                    <button className="t-outline" type="button" onClick={() => nav("/search")}>
-                      Explore Map
-                    </button>
-                  </div>
-                </div>
-                <div className="search-shortcut" onClick={() => nav("/search")} style={{ cursor: "pointer" }}>
-                  <span>
-                    <Icon name="search" /> 2-bed near {workplace} under {Number(budget).toLocaleString()} ETB
-                  </span>
-                  <button type="button">
-                    <Icon name="arrow" />
-                  </button>
-                </div>
+        {/* TAB 1: RECOMMENDED MATCHES */}
+        {activeTab === "matches" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "20px", color: "#0d345b" }}>Top Homes for Your Daily Routine</h2>
+                <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#60788c" }}>
+                  Ranked by commute proximity to {workplace}, utility guarantees, and monthly budget.
+                </p>
               </div>
-
-              <section className="match-summary">
-                <div>
-                  <p className="eyebrow">PERSONALIZED FOR YOU</p>
-                  <h2>Homes picked for you</h2>
-                  <p>
-                    <b>{recommended.length} homes</b> match your current preferences.
-                  </p>
-                  <Link to="/search">
-                    View all matches <Icon name="arrow" />
-                  </Link>
-                </div>
-                <div className="match-factors">
-                  <span>
-                    <b>Location</b>
-                    <i style={{ width: "92%" }} />
-                  </span>
-                  <span>
-                    <b>Budget</b>
-                    <i style={{ width: "88%" }} />
-                  </span>
-                  <span>
-                    <b>Bedrooms</b>
-                    <i style={{ width: "100%" }} />
-                  </span>
-                  <span>
-                    <b>Commute</b>
-                    <i style={{ width: "80%" }} />
-                  </span>
-                  <small>Based on work around {workplace} & {Number(budget).toLocaleString()} ETB budget</small>
-                </div>
-              </section>
-
-              <section className="t-section">
-                <div className="t-head">
-                  <div>
-                    <p className="eyebrow">RECOMMENDED</p>
-                    <h2>Recommended for you</h2>
-                  </div>
-                  <Link to="/search">
-                    See all homes <Icon name="arrow" />
-                  </Link>
-                </div>
-                <div className="t-cards">
-                  {recommended.map((h, i) => (
-                    <Card
-                      h={h}
-                      i={i}
-                      key={h.name + i}
-                      onOpen={() => nav(`/property/${h.id}`)}
-                    />
-                  ))}
-                </div>
-              </section>
-
-              <section className="t-grid">
-                <div className="continue">
-                  <p className="eyebrow">CONTINUE YOUR SEARCH</p>
-                  <h2>2-bedroom apartments in Bole</h2>
-                  <div>
-                    <span>Bole, Addis Ababa</span>
-                    <span>Up to {Number(budget).toLocaleString()} ETB</span>
-                    <span>2+ bedrooms</span>
-                    <span>Apartment</span>
-                  </div>
-                  <small>Last searched today</small>
-                  <Link to="/search">
-                    Continue search <Icon name="arrow" />
-                  </Link>
-                </div>
-
-                <div className="updates">
-                  <div className="t-head">
-                    <div>
-                      <p className="eyebrow">NEW FOR YOU</p>
-                      <h2>Search updates</h2>
-                    </div>
-                    <button type="button">
-                      <Icon name="more" />
-                    </button>
-                  </div>
-                  <article onClick={() => nav("/property/sunlit-2bed")} style={{ cursor: "pointer" }}>
-                    <i className="price-drop">↓</i>
-                    <div>
-                      <b>Price changed</b>
-                      <p>
-                        A home you saved is now <strong>3,000 ETB less</strong> per month.
-                      </p>
-                      <button type="button">View property</button>
-                    </div>
-                  </article>
-                  <article onClick={() => nav("/property/sunlit-2bed")} style={{ cursor: "pointer" }}>
-                    <i className="available-dot">●</i>
-                    <div>
-                      <b>Availability update</b>
-                      <p>A saved home was recently confirmed available.</p>
-                      <button type="button">View home</button>
-                    </div>
-                  </article>
-                </div>
-              </section>
-
-              <section className="t-section commute-section">
-                <div className="t-head">
-                  <div>
-                    <p className="eyebrow">COMMUTE-FRIENDLY</p>
-                    <h2>Homes that fit your commute</h2>
-                    <p>Within {commute} of {workplace}</p>
-                  </div>
-                  <Link to="/search">
-                    Explore homes <Icon name="arrow" />
-                  </Link>
-                </div>
-                <div className="commute-list">
-                  {recommended.slice(0, 2).map((h, i) => (
-                    <div
-                      key={h.name + i}
-                      onClick={() => nav(`/property/${h.id}`)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <span className="small-image">
-                        <img src={pics[i % 4]} alt="" />
-                      </span>
-                      <b>{h.name}</b>
-                      <span>{h.area}</span>
-                      <strong>Estimated {h.time}</strong>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="neighborhoods">
-                <div className="t-head">
-                  <div>
-                    <p className="eyebrow">EXPLORE ADDIS</p>
-                    <h2>Explore neighborhoods</h2>
-                  </div>
-                  <Link to="/search">
-                    See map <Icon name="map" />
-                  </Link>
-                </div>
-                <div className="hood-grid">
-                  {["Bole", "Kazanchis", "CMC", "Yeka", "Sarbet", "Piassa"].map(
-                    (x, i) => (
-                      <article
-                        key={x}
-                        onClick={() => nav(`/search?location=${encodeURIComponent(x)}`)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <img src={pics[i % 3]} alt={`${x}, Addis Ababa`} />
-                        <div>
-                          <b>{x}</b>
-                          <span>Matching homes available</span>
-                          <button type="button">
-                            Explore <Icon name="arrow" />
-                          </button>
-                        </div>
-                      </article>
-                    )
-                  )}
-                </div>
-              </section>
-
-              <section className="move-panel">
-                <div>
-                  <p className="eyebrow">MY MOVE PLAN</p>
-                  <h2>A few steps closer to your next home.</h2>
-                  <p>
-                    Keep your search, viewings, and move checklist organized in one place.
-                  </p>
-                  <Link to="/search">
-                    Plan my move <Icon name="arrow" />
-                  </Link>
-                </div>
-                <ol>
-                  <li className="done">Preferences set in Atlas</li>
-                  <li className="done">Save homes you like ({savedList.length} saved)</li>
-                  <li>Request viewing appointment</li>
-                  <li>Review lease terms and move in</li>
-                </ol>
-              </section>
-            </>
-          )}
-
-          {tab === "Saved" && (
-            <div>
-              <div className="t-head">
-                <div>
-                  <p className="eyebrow">SAVED PROPERTIES</p>
-                  <h1>Your Saved Homes ({savedList.length})</h1>
-                  <p>Properties you’ve favorited for comparison or viewing.</p>
-                </div>
-                <Link to="/search">
-                  Browse more homes <Icon name="arrow" />
-                </Link>
-              </div>
-              <div className="t-cards" style={{ marginTop: "24px" }}>
-                {savedList.map((h, i) => (
-                  <Card
-                    h={h}
-                    i={i}
-                    isSaved={true}
-                    key={h.name + i}
-                    onOpen={() => nav(`/property/${h.id}`)}
-                  />
-                ))}
-              </div>
+              <button
+                onClick={() => setActiveTab("preferences")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#0b8879",
+                  fontWeight: 800,
+                  fontSize: "11px",
+                  cursor: "pointer",
+                }}
+              >
+                Adjust Match Filters ⚙️
+              </button>
             </div>
-          )}
 
-          {tab === "Compare" && (
-            <div>
-              <div className="t-head">
-                <div>
-                  <p className="eyebrow">PROPERTY COMPARISON</p>
-                  <h1>Compare Saved Homes</h1>
-                  <p>Side-by-side comparison on rent, commute, and verified utilities.</p>
-                </div>
-                <button className="t-outline" type="button" onClick={() => setTab("Home")}>
-                  Back to Overview
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+              {recommended.map((p) => {
+                const cover = p.media?.find((m) => m.isCover) || p.media?.[0];
+                const saved = isHomeSaved(p._id);
+                return (
+                  <div
+                    key={p._id}
+                    onClick={() => nav(`/property/${p._id}`)}
+                    style={{
+                      background: "#ffffff",
+                      borderRadius: "14px",
+                      border: "1px solid #e1e9ee",
+                      overflow: "hidden",
+                      boxShadow: "0 4px 14px rgba(13, 52, 91, 0.05)",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                    }}
+                  >
+                    <div style={{ position: "relative", height: "190px" }}>
+                      <img
+                        src={cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"}
+                        alt={p.title}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "12px",
+                          left: "12px",
+                          background: "rgba(13, 52, 91, 0.9)",
+                          color: "#8bd9ca",
+                          padding: "3px 8px",
+                          borderRadius: "99px",
+                          fontSize: "9px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        ✓ Verified
+                      </span>
+                      <button
+                        onClick={(e) => toggleSave(p._id, e)}
+                        style={{
+                          position: "absolute",
+                          top: "12px",
+                          right: "12px",
+                          background: saved ? "#0b8879" : "rgba(255,255,255,0.9)",
+                          color: saved ? "#ffffff" : "#6a8194",
+                          border: "none",
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          cursor: "pointer",
+                          display: "grid",
+                          placeItems: "center",
+                        }}
+                        aria-label="Save home"
+                      >
+                        <Icon name="heart" />
+                      </button>
+                    </div>
+
+                    <div style={{ padding: "18px", flex: 1, display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div>
+                          <h3 style={{ margin: "0 0 4px", fontSize: "15px", color: "#0d345b" }}>{p.title}</h3>
+                          <p style={{ margin: 0, color: "#647d91", fontSize: "11px" }}>
+                            📍 {p.location.neighborhood}, {p.location.subCity}
+                          </p>
+                        </div>
+                        <span
+                          style={{
+                            background: "#e1f4ef",
+                            color: "#087d70",
+                            padding: "3px 8px",
+                            borderRadius: "99px",
+                            fontSize: "11px",
+                            fontWeight: 800,
+                          }}
+                        >
+                          {p.matchScore || 92}% Match
+                        </span>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "12px", margin: "14px 0", fontSize: "11px", color: "#547188" }}>
+                        <span>🛏 {p.bedrooms} Beds</span>
+                        <span>🚿 {p.bathrooms} Baths</span>
+                        <span>📐 {p.area} m²</span>
+                      </div>
+
+                      <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #eef3f6", paddingTop: "12px" }}>
+                        <b style={{ color: "#0b8879", fontSize: "15px" }}>
+                          ETB {Number(p.price).toLocaleString()}
+                          <small style={{ fontSize: "10px", color: "#6a8194", fontWeight: 400 }}> /mo</small>
+                        </b>
+                        <small style={{ color: "#506e84", fontSize: "10px" }}>
+                          🚗 {p.location.landmark || "20 min to work"}
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: SAVED HOMES */}
+        {activeTab === "saved" && (
+          <div>
+            <div style={{ marginBottom: "20px" }}>
+              <h2 style={{ margin: 0, fontSize: "20px", color: "#0d345b" }}>Your Saved Homes ({savedHomes.length})</h2>
+              <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#60788c" }}>
+                Keep track of properties you like, compare pricing, and schedule viewings.
+              </p>
+            </div>
+
+            {savedHomes.length === 0 ? (
+              <div style={{ background: "#ffffff", padding: "48px", borderRadius: "12px", textAlign: "center", border: "1px solid #e1e9ed" }}>
+                <p style={{ color: "#647d91", fontSize: "14px" }}>You haven't saved any homes yet.</p>
+                <button onClick={() => nav("/search")} className="btn" style={{ marginTop: "12px" }}>
+                  Find Homes in Addis Ababa
                 </button>
               </div>
-              <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #dce6ea", overflow: "hidden", marginTop: "24px" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "12px" }}>
-                  <thead>
-                    <tr style={{ background: "#f4f8f7", borderBottom: "1px solid #dce6ea" }}>
-                      <th style={{ padding: "14px 16px", color: "#6e8496", fontSize: "11px" }}>Feature</th>
-                      {savedList.map((h) => (
-                        <th key={h.name} style={{ padding: "14px 16px", color: "#10345b", fontWeight: 800 }}>
-                          {h.name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ borderBottom: "1px solid #eef2f5" }}>
-                      <td style={{ padding: "12px 16px", color: "#6e8496" }}>Monthly Rent</td>
-                      {savedList.map((h) => (
-                        <td key={h.name} style={{ padding: "12px 16px", fontWeight: 700, color: "#087d70" }}>
-                          ETB {h.price}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr style={{ borderBottom: "1px solid #eef2f5" }}>
-                      <td style={{ padding: "12px 16px", color: "#6e8496" }}>Location</td>
-                      {savedList.map((h) => (
-                        <td key={h.name} style={{ padding: "12px 16px" }}>{h.area}</td>
-                      ))}
-                    </tr>
-                    <tr style={{ borderBottom: "1px solid #eef2f5" }}>
-                      <td style={{ padding: "12px 16px", color: "#6e8496" }}>Commute</td>
-                      {savedList.map((h) => (
-                        <td key={h.name} style={{ padding: "12px 16px" }}>{h.time}</td>
-                      ))}
-                    </tr>
-                    <tr style={{ borderBottom: "1px solid #eef2f5" }}>
-                      <td style={{ padding: "12px 16px", color: "#6e8496" }}>Match Score</td>
-                      {savedList.map((h) => (
-                        <td key={h.name} style={{ padding: "12px 16px", fontWeight: 800 }}>{h.score}%</td>
-                      ))}
-                    </tr>
-                    <tr style={{ borderBottom: "1px solid #eef2f5" }}>
-                      <td style={{ padding: "12px 16px", color: "#6e8496" }}>Layout</td>
-                      {savedList.map((h) => (
-                        <td key={h.name} style={{ padding: "12px 16px" }}>{h.beds} beds • {h.baths} baths • {h.size}</td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "14px 16px", color: "#6e8496" }}>Action</td>
-                      {savedList.map((h) => (
-                        <td key={h.name} style={{ padding: "14px 16px" }}>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+                {savedHomes.map((p) => {
+                  const cover = p.media?.find((m) => m.isCover) || p.media?.[0];
+                  return (
+                    <div
+                      key={p._id}
+                      style={{
+                        background: "#ffffff",
+                        borderRadius: "14px",
+                        border: "1px solid #e1e9ee",
+                        overflow: "hidden",
+                        boxShadow: "0 4px 14px rgba(13, 52, 91, 0.05)",
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      <div style={{ position: "relative", height: "180px" }}>
+                        <img
+                          src={cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"}
+                          alt={p.title}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                        <button
+                          onClick={() => toggleSave(p._id)}
+                          style={{
+                            position: "absolute",
+                            top: "12px",
+                            right: "12px",
+                            background: "#0b8879",
+                            color: "#ffffff",
+                            border: "none",
+                            padding: "4px 8px",
+                            borderRadius: "99px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          ❤️ Saved (Remove)
+                        </button>
+                      </div>
+
+                      <div style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
+                        <h3 style={{ margin: "0 0 4px", fontSize: "15px", color: "#0d345b" }}>{p.title}</h3>
+                        <p style={{ margin: 0, color: "#647d91", fontSize: "11px" }}>
+                          📍 {p.location?.neighborhood || p.location?.subCity}, Addis Ababa
+                        </p>
+
+                        <div style={{ margin: "12px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <b style={{ color: "#0b8879", fontSize: "16px" }}>
+                            ETB {Number(p.price).toLocaleString()} /mo
+                          </b>
+                          <span style={{ fontSize: "11px", color: "#547188" }}>
+                            {p.bedrooms} Beds · {p.bathrooms} Baths
+                          </span>
+                        </div>
+
+                        <div style={{ marginTop: "auto", display: "flex", gap: "8px", borderTop: "1px solid #eef3f6", paddingTop: "12px" }}>
                           <button
-                            type="button"
-                            onClick={() => nav(`/property/${h.id}`)}
-                            className="btn"
-                            style={{ padding: "6px 12px", fontSize: "10px" }}
+                            onClick={() => nav(`/property/${p._id}`)}
+                            style={{
+                              flex: 1,
+                              background: "#0d345b",
+                              color: "#ffffff",
+                              border: "none",
+                              padding: "8px",
+                              borderRadius: "6px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
                           >
                             View Details
                           </button>
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
+                          <button
+                            onClick={() => nav("/messages")}
+                            style={{
+                              background: "#f0f6f5",
+                              color: "#075e53",
+                              border: "1px solid #c8ded9",
+                              padding: "8px 12px",
+                              borderRadius: "6px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Inquire
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: VIEWINGS & APPOINTMENTS */}
+        {activeTab === "viewings" && (
+          <div>
+            <div style={{ marginBottom: "20px" }}>
+              <h2 style={{ margin: 0, fontSize: "20px", color: "#0d345b" }}>Your Viewing Appointments</h2>
+              <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#60788c" }}>
+                Confirmed and pending property visits with landlords.
+              </p>
             </div>
-          )}
 
-          {tab === "My Activity" && (
-            <div>
-              <div className="t-head">
-                <div>
-                  <p className="eyebrow">INQUIRIES & VIEWINGS</p>
-                  <h1>My Rental Activity</h1>
-                  <p>Track your scheduled property viewings and direct landlord messages.</p>
-                </div>
-                <Link to="/messages" className="btn" style={{ textDecoration: "none" }}>
-                  Open Messages →
-                </Link>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginTop: "24px" }}>
-                <div style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #dce6ea" }}>
-                  <b style={{ color: "#10345b", fontSize: "14px", display: "block", marginBottom: "16px" }}>
-                    Upcoming Viewings (1)
-                  </b>
-                  <div style={{ display: "flex", gap: "12px", padding: "12px", borderRadius: "8px", background: "#f4f8f7", border: "1px solid #dce6ea" }}>
-                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#0b8879", color: "#fff", display: "grid", placeItems: "center" }}>
-                      <Icon name="calendar" />
-                    </div>
-                    <div>
-                      <b style={{ fontSize: "12px", color: "#10345b", display: "block" }}>Sunlit Two-Bedroom Apartment</b>
-                      <span style={{ fontSize: "11px", color: "#087d70", fontWeight: 700 }}>Saturday, 10:00 AM • Bole</span>
-                      <small style={{ display: "block", color: "#74889a", marginTop: "2px" }}>Confirmed with landlord Kalkidan M.</small>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ background: "#fff", padding: "24px", borderRadius: "12px", border: "1px solid #dce6ea" }}>
-                  <b style={{ color: "#10345b", fontSize: "14px", display: "block", marginBottom: "16px" }}>
-                    Recent Inquiries (3)
-                  </b>
-                  <div style={{ display: "grid", gap: "10px" }}>
-                    <div onClick={() => nav("/messages")} style={{ padding: "10px", borderRadius: "6px", background: "#f8faf9", cursor: "pointer", border: "1px solid #e5ecef" }}>
-                      <b style={{ fontSize: "11px", color: "#254867" }}>Sunlit Two-Bedroom Apartment</b>
-                      <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#6a8295" }}>"Yes, Saturday works for me..." • 10:42 AM</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tab === "Preferences" && (
-            <div>
-              <div className="t-head">
-                <div>
-                  <p className="eyebrow">RENTAL MATCH ENGINE</p>
-                  <h1>Housing Preferences</h1>
-                  <p>Fine-tune the factors Addis Kiray uses to calculate your Match Score in MongoDB Atlas.</p>
-                </div>
-                <button className="btn" type="button" onClick={handleSavePreferences}>
-                  Save Preferences
+            {viewings.length === 0 ? (
+              <div style={{ background: "#ffffff", padding: "48px", borderRadius: "12px", textAlign: "center", border: "1px solid #e1e9ed" }}>
+                <p style={{ color: "#647d91", fontSize: "14px" }}>No active viewing appointments.</p>
+                <button onClick={() => nav("/search")} className="btn" style={{ marginTop: "12px" }}>
+                  Schedule a Viewing from Search
                 </button>
               </div>
+            ) : (
+              <div style={{ display: "grid", gap: "14px" }}>
+                {viewings.map((v) => (
+                  <div
+                    key={v._id}
+                    style={{
+                      background: "#ffffff",
+                      borderRadius: "12px",
+                      border: "1px solid #e0e9ee",
+                      padding: "20px 24px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: "16px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <div
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "50%",
+                          background: "#e8f3f1",
+                          color: "#087d70",
+                          fontSize: "16px",
+                          fontWeight: 800,
+                          display: "grid",
+                          placeItems: "center",
+                        }}
+                      >
+                        📅
+                      </div>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <h4 style={{ margin: 0, color: "#11355b", fontSize: "15px" }}>{v.property?.title || "Apartment Viewing"}</h4>
+                          <span
+                            style={{
+                              background: v.status === "confirmed" ? "#e3f7f2" : "#fef3c7",
+                              color: v.status === "confirmed" ? "#075e53" : "#92400e",
+                              padding: "2px 8px",
+                              borderRadius: "99px",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            ● {v.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <p style={{ margin: "4px 0 0", color: "#547188", fontSize: "12px" }}>
+                          Landlord: <b>{v.landlord?.name}</b> · 📞 {v.landlord?.phone || "+251 92 233 4455"}
+                        </p>
+                        <small style={{ color: "#6a8194", fontSize: "11px" }}>
+                          Date & Time: <b>{new Date(v.appointmentDate).toLocaleDateString()} at {v.appointmentTime}</b>
+                        </small>
+                      </div>
+                    </div>
 
-              <div style={{ background: "#fff", padding: "28px", borderRadius: "12px", border: "1px solid #dce6ea", marginTop: "24px", maxWidth: "680px" }}>
-                <div style={{ display: "grid", gap: "18px" }}>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#254867" }}>
-                    Workplace / Campus Destination
-                    <input
-                      value={workplace}
-                      onChange={(e) => setWorkplace(e.target.value)}
-                      style={{ width: "100%", padding: "10px", marginTop: "6px", border: "1px solid #dce6eb", borderRadius: "6px", fontSize: "12px" }}
-                    />
-                  </label>
-
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#254867" }}>
-                    Monthly Housing Budget (ETB)
-                    <input
-                      value={budget}
-                      onChange={(e) => setBudget(e.target.value)}
-                      style={{ width: "100%", padding: "10px", marginTop: "6px", border: "1px solid #dce6eb", borderRadius: "6px", fontSize: "12px" }}
-                    />
-                  </label>
-
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#254867" }}>
-                    Maximum Commute Time
-                    <select
-                      value={commute}
-                      onChange={(e) => setCommute(e.target.value)}
-                      style={{ width: "100%", padding: "10px", marginTop: "6px", border: "1px solid #dce6eb", borderRadius: "6px", fontSize: "12px" }}
-                    >
-                      <option>15 min</option>
-                      <option>30 min</option>
-                      <option>45 min</option>
-                      <option>60 min</option>
-                    </select>
-                  </label>
-
-                  <div>
-                    <b style={{ display: "block", fontSize: "11px", color: "#254867", marginBottom: "8px" }}>
-                      Must-Have Utilities & Amenities
-                    </b>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "11px", color: "#546e82" }}>
-                      <label><input type="checkbox" defaultChecked /> Backup Water Tank</label>
-                      <label><input type="checkbox" defaultChecked /> Generator</label>
-                      <label><input type="checkbox" defaultChecked /> Dedicated Parking</label>
-                      <label><input type="checkbox" defaultChecked /> 24/7 Security</label>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        onClick={() => nav("/messages")}
+                        style={{
+                          background: "#0d345b",
+                          color: "#ffffff",
+                          border: "none",
+                          padding: "8px 16px",
+                          borderRadius: "6px",
+                          fontWeight: 700,
+                          fontSize: "11px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        💬 Message Landlord
+                      </button>
+                      {v.status !== "cancelled" && (
+                        <button
+                          onClick={() => cancelViewing(v._id)}
+                          style={{
+                            background: "#fff1f2",
+                            color: "#be123c",
+                            border: "1px solid #fecdd3",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            fontWeight: 700,
+                            fontSize: "11px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: PREFERENCES & MOVING PLAN */}
+        {activeTab === "preferences" && (
+          <div style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid #e1e9ee", padding: "32px" }}>
+            <h2 style={{ margin: "0 0 8px", color: "#0d345b", fontSize: "20px" }}>Housing Match Preferences</h2>
+            <p style={{ margin: "0 0 24px", color: "#547188", fontSize: "13px" }}>
+              Update your workplace destination and budget to customize Match Scores across all Addis Ababa listings.
+            </p>
+
+            <form onSubmit={savePreferences} style={{ maxWidth: "640px", display: "grid", gap: "20px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#11355b", marginBottom: "6px" }}>
+                  📍 Workplace / University Destination in Addis Ababa
+                </label>
+                <input
+                  type="text"
+                  value={workplace}
+                  onChange={(e) => setWorkplace(e.target.value)}
+                  placeholder="e.g. Bole Edna Mall, UNECA Kazanchis, Mexico Square..."
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid #cbdde4",
+                    fontSize: "13px",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#11355b", marginBottom: "6px" }}>
+                  💰 Maximum Monthly Budget: ETB {budgetMax.toLocaleString()}
+                </label>
+                <input
+                  type="range"
+                  min="15000"
+                  max="120000"
+                  step="2500"
+                  value={budgetMax}
+                  onChange={(e) => setBudgetMax(Number(e.target.value))}
+                  style={{ width: "100%", accentColor: "#0b8879" }}
+                />
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#6a8194" }}>
+                  <span>15,000 ETB</span>
+                  <span>60,000 ETB</span>
+                  <span>120,000+ ETB</span>
                 </div>
               </div>
-            </div>
-          )}
-        </section>
-      </div>
 
-      <nav className="bottom-nav">
-        {[
-          ["Home", "home"],
-          ["Search", "search"],
-          ["Saved", "heart"],
-          ["Activity", "calendar"],
-          ["Profile", "more"],
-        ].map(([x, i]) => (
-          <button
-            className={
-              tab === x || (tab === "Find a Home" && x === "Search")
-                ? "active"
-                : ""
-            }
-            onClick={() => handleNavClick(x === "Search" ? "Find a Home" : x)}
-            key={x}
-            type="button"
-          >
-            <Icon name={i} />
-            <span>{x}</span>
-          </button>
-        ))}
-      </nav>
-    </main>
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#11355b", marginBottom: "6px" }}>
+                  ⏱️ Maximum Commute Time: {maxCommuteMin} minutes
+                </label>
+                <input
+                  type="range"
+                  min="10"
+                  max="60"
+                  step="5"
+                  value={maxCommuteMin}
+                  onChange={(e) => setMaxCommuteMin(Number(e.target.value))}
+                  style={{ width: "100%", accentColor: "#0b8879" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#11355b", marginBottom: "8px" }}>
+                  ⚡ Must-Have Utility & Compound Requirements
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  {[
+                    "Water tank",
+                    "Generator",
+                    "24/7 security",
+                    "Parking",
+                    "Elevator",
+                    "Balcony",
+                    "Garden",
+                  ].map((amenity) => {
+                    const checked = mustHaveAmenities.includes(amenity);
+                    return (
+                      <label
+                        key={amenity}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "8px 12px",
+                          borderRadius: "6px",
+                          border: checked ? "1px solid #0b8879" : "1px solid #e1e9ee",
+                          background: checked ? "#f0f8f6" : "#ffffff",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          color: checked ? "#075e53" : "#345873",
+                          fontWeight: checked ? 700 : 400,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setMustHaveAmenities([...mustHaveAmenities, amenity]);
+                            } else {
+                              setMustHaveAmenities(mustHaveAmenities.filter((a) => a !== amenity));
+                            }
+                          }}
+                          style={{ accentColor: "#0b8879" }}
+                        />
+                        {amenity}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn"
+                style={{
+                  background: "#0b8879",
+                  color: "#ffffff",
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  fontWeight: 800,
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  marginTop: "8px",
+                }}
+              >
+                Save Preferences & Update Match Scores →
+              </button>
+            </form>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
   );
 }

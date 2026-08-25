@@ -19,8 +19,14 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(contact, password);
-      nav("/tenant");
+      const loggedInUser = await login(contact, password);
+      if (loggedInUser.role === "landlord") {
+        nav("/landlord");
+      } else if (loggedInUser.role === "admin") {
+        nav("/admin");
+      } else {
+        nav("/tenant");
+      }
     } catch (err: any) {
       setError(err.message || "Invalid email or password.");
     } finally {

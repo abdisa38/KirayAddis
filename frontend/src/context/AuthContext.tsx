@@ -23,8 +23,8 @@ interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: string, phone?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<UserProfile>;
+  register: (name: string, email: string, password: string, role: string, phone?: string) => Promise<UserProfile>;
   logout: () => void;
   updateUser: (updated: Partial<UserProfile>) => void;
 }
@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchMe();
   }, [token]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<UserProfile> => {
     const data = await apiRequest("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
@@ -100,7 +100,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(profile);
       localStorage.setItem("addis_kiray_user", JSON.stringify(profile));
+      return profile;
     }
+    throw new Error(data.message || "Login failed");
   };
 
   const register = async (
@@ -109,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string,
     role: string,
     phone?: string
-  ) => {
+  ): Promise<UserProfile> => {
     const data = await apiRequest("/auth/register", {
       method: "POST",
       body: JSON.stringify({ name, email, password, role, phone }),
@@ -132,8 +134,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(profile);
       localStorage.setItem("addis_kiray_user", JSON.stringify(profile));
+      return profile;
     }
+    throw new Error(data.message || "Registration failed");
   };
+
 
   const logout = () => {
     setToken(null);

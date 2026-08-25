@@ -5,8 +5,9 @@ import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
 export default function Register() {
-  const [pw, setPw] = useState(false);
-  const [role, setRole] = useState<"tenant" | "landlord">("tenant");
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialRole = searchParams.get("role") === "landlord" ? "landlord" : "tenant";
+  const [role, setRole] = useState<"tenant" | "landlord">(initialRole);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -22,8 +23,12 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await register(name, email, password, role, phone);
-      nav("/auth/verify-email");
+      const newUser = await register(name, email, password, role, phone);
+      if (newUser.role === "landlord") {
+        nav("/landlord");
+      } else {
+        nav("/tenant");
+      }
     } catch (err: any) {
       setError(err.message || "Registration failed. Please check your information.");
     } finally {

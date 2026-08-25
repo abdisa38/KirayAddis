@@ -1,40 +1,19 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
 import { apiRequest } from "./api/client";
-import Logo from "./components/Logo";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import Icon from "./components/Icon";
-
-const nav = [
-  ["Dashboard", "grid"],
-  ["Users", "users"],
-  ["Properties", "home"],
-  ["Verification", "check"],
-  ["Reports", "flag"],
-  ["Messages", "mail"],
-  ["Analytics", "chart"],
-  ["Audit Logs", "file"],
-];
-
-const fallbackUsers = [
-  { name: "Alem Mengistu", role: "Tenant", email: "alem@example.com", status: "Active", joined: "Today" },
-  { name: "Kalkidan M.", role: "Landlord (Verified)", email: "kalkidan@example.com", status: "Active", joined: "2 days ago" },
-  { name: "Admin Kiray", role: "Super Admin", email: "admin@addiskiray.com", status: "Active", joined: "1 month ago" },
-];
-
-const fallbackProperties = [
-  { id: "1", title: "Sunlit Two-Bedroom Apartment", landlord: "Kalkidan M.", area: "Bole", rent: "42,000 ETB", status: "Published" },
-  { id: "2", title: "Modern apartment near Atlas", landlord: "Kalkidan M.", area: "Bole Atlas", rent: "36,000 ETB", status: "Published" },
-  { id: "3", title: "Quiet Home in a Secure Compound", landlord: "Kalkidan M.", area: "Yeka", rent: "39,500 ETB", status: "Published" },
-  { id: "4", title: "Bright Two-Bedroom in Kazanchis", landlord: "Kalkidan M.", area: "Kazanchis", rent: "34,000 ETB", status: "Published" },
-];
 
 export default function AdminExperience() {
   const { user, login } = useAuth();
-  const [active, setActive] = useState("Dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "queue" | "users" | "reports" | "properties">("dashboard");
   const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({
-    activeProperties: 4,
-    availableProperties: 4,
+    activeProperties: 13,
+    availableProperties: 13,
     totalTenants: 1,
     totalLandlords: 1,
     pendingProperties: 0,
@@ -42,452 +21,732 @@ export default function AdminExperience() {
     upcomingViewings: 1,
   });
   const [queue, setQueue] = useState<any[]>([]);
-  const [usersList, setUsersList] = useState<any[]>(fallbackUsers);
-  const [propertiesList, setPropertiesList] = useState<any[]>(fallbackProperties);
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [propertiesList, setPropertiesList] = useState<any[]>([]);
+  const [reportsList, setReportsList] = useState<any[]>([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("all");
+  const nav = useNavigate();
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3500);
   };
 
-  useEffect(() => {
-    const initAdmin = async () => {
-      try {
-        if (!user || user.role !== "admin") {
-          await login("admin@addiskiray.com", "adminpassword123");
-        }
-
-        const [kpiRes, queueRes, usersRes, propsRes] = await Promise.allSettled([
-          apiRequest("/admin/kpis"),
-          apiRequest("/admin/queue"),
-          apiRequest("/admin/users"),
-          apiRequest("/properties"),
-        ]);
-
-        if (kpiRes.status === "fulfilled" && kpiRes.value.success) {
-          setKpis(kpiRes.value.kpis);
-        }
-        if (queueRes.status === "fulfilled" && queueRes.value.success) {
-          setQueue(queueRes.value.queue || []);
-        }
-        if (usersRes.status === "fulfilled" && usersRes.value.success && usersRes.value.users?.length) {
-          setUsersList(
-            usersRes.value.users.map((u: any) => ({
-              id: u._id,
-              name: u.name,
-              role: u.role === "admin" ? "Super Admin" : u.role === "landlord" ? "Landlord" : "Tenant",
-              email: u.email,
-              status: u.isEmailVerified ? "Active" : "Unverified",
-              joined: "Active in MongoDB",
-            }))
-          );
-        }
-        if (propsRes.status === "fulfilled" && propsRes.value.success && propsRes.value.properties?.length) {
-          setPropertiesList(
-            propsRes.value.properties.map((p: any) => ({
-              id: p._id,
-              title: p.title,
-              landlord: p.owner?.name || "Landlord",
-              area: p.location?.subCity || "Addis Ababa",
-              rent: `${Number(p.price).toLocaleString()} ETB`,
-              status: p.verification?.status === "Approved" ? "Published" : p.verification?.status || "Pending",
-            }))
-          );
-        }
-      } catch (err) {}
-    };
-
-    initAdmin();
-  }, [user]);
-
-  const handleModerate = async (propertyId: string, status: "Approved" | "Rejected") => {
+  const fetchAdminData = async () => {
+    setLoading(true);
     try {
-      await apiRequest(`/admin/properties/${propertyId}/moderate`, {
-        method: "PATCH",
-        body: JSON.stringify({ status, notes: `Moderated by admin` }),
-      });
-      showToast(`Property listing marked ${status} in MongoDB Atlas!`);
-      setQueue((prev) => prev.filter((item) => item._id !== propertyId));
-    } catch (err) {
-      showToast(`Listing ${status}`);
+      if (!user || user.role !== "admin") {
+        await login("admin@addiskiray.com", "adminpassword123");
+      }
+
+      const [kpiRes, queueRes, usersRes, propsRes, reportsRes] = await Promise.allSettled([
+        apiRequest("/admin/kpis"),
+        apiRequest("/admin/queue"),
+        apiRequest("/admin/users"),
+        apiRequest("/properties?limit=50"),
+        apiRequest("/admin/reports"),
+      ]);
+
+      if (kpiRes.status === "fulfilled" && kpiRes.value.success) {
+        setKpis(kpiRes.value.kpis);
+      }
+      if (queueRes.status === "fulfilled" && queueRes.value.success) {
+        setQueue(queueRes.value.queue || []);
+      }
+      if (usersRes.status === "fulfilled" && usersRes.value.success) {
+        setUsersList(usersRes.value.users || []);
+      }
+      if (propsRes.status === "fulfilled" && propsRes.value.success) {
+        setPropertiesList(propsRes.value.properties || []);
+      }
+      if (reportsRes.status === "fulfilled" && reportsRes.value.success) {
+        setReportsList(reportsRes.value.reports || []);
+      }
+    } catch (err: any) {
+      console.error("Error fetching admin data:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchAdminData();
+  }, [user]);
+
+  // Moderate listing
+  const moderate = async (id: string, status: "Approved" | "Rejected") => {
+    try {
+      const data = await apiRequest(`/admin/properties/${id}/moderate`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      if (data.success) {
+        showToast(`Listing ${status === "Approved" ? "Approved & Published" : "Rejected"}.`);
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to moderate property");
+    }
+  };
+
+  // Toggle user verification
+  const toggleUserVerification = async (id: string) => {
+    try {
+      const data = await apiRequest(`/admin/users/${id}/status`, { method: "PATCH" });
+      if (data.success) {
+        showToast(data.message);
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to update user status");
+    }
+  };
+
+  // Update report status
+  const updateReport = async (id: string, status: "investigating" | "resolved" | "dismissed") => {
+    try {
+      const data = await apiRequest(`/admin/reports/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      if (data.success) {
+        showToast(`Report marked as ${status}.`);
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to update report status");
+    }
+  };
+
+  // Delete property
+  const deleteProp = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this listing?")) return;
+    try {
+      const data = await apiRequest(`/properties/${id}`, { method: "DELETE" });
+      if (data.success) {
+        showToast("Listing deleted from platform.");
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to delete listing");
+    }
+  };
+
+  // Filtered Users
+  const filteredUsers = usersList.filter((u) => {
+    const matchesSearch =
+      u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.email?.toLowerCase().includes(userSearch.toLowerCase());
+    const matchesRole = userRoleFilter === "all" || u.role === userRoleFilter;
+    return matchesSearch && matchesRole;
+  });
+
   return (
-    <main className="admin">
-      <aside className="admin-side">
-        <Logo to="/" />
-        <p className="admin-label">OPERATIONS</p>
-        {nav.map(([x, i]) => (
-          <button
-            onClick={() => setActive(x)}
-            className={active === x ? "active" : ""}
-            key={x}
-            type="button"
-          >
-            <Icon name={i} />
-            {x}
-            {x === "Reports" && <b>{kpis.openReports}</b>}
-            {x === "Verification" && <b>{queue.length || kpis.pendingProperties}</b>}
-          </button>
-        ))}
-        <div className="admin-account">
-          <span>AK</span>
-          <div>
-            <b>{user?.name || "Admin Kiray"}</b>
-            <small>Super Admin • Addis Kiray</small>
-          </div>
-          <Icon name="more" />
-        </div>
-      </aside>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f8fbfa" }}>
+      <Navbar />
 
-      <section className="admin-main">
-        <header className="admin-top">
-          <div className="global-search">
-            <Icon name="search" />
-            <input placeholder="Search users, properties, reports in Atlas..." />
-          </div>
-          <button type="button" onClick={() => showToast("Live MongoDB Atlas connection active")}>
-            <Icon name="bell" />
-            <b>{kpis.openReports + queue.length || 1}</b>
-          </button>
-          <span className="role">Super Admin</span>
-          <span className="admin-avatar">AK</span>
-        </header>
-
-        <div className="admin-content">
-          <div className="admin-title">
+      <main style={{ flex: 1, maxWidth: "1240px", width: "100%", margin: "0 auto", padding: "32px 24px 60px" }}>
+        {/* Admin Header Bar */}
+        <div
+          style={{
+            background: "linear-gradient(135deg, #0d345b 0%, #174878 100%)",
+            borderRadius: "16px",
+            padding: "28px 32px",
+            color: "#ffffff",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "20px",
+            boxShadow: "0 8px 24px rgba(13, 52, 91, 0.12)",
+            marginBottom: "28px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: "#0b8879",
+                color: "#ffffff",
+                fontSize: "20px",
+                fontWeight: 800,
+                display: "grid",
+                placeItems: "center",
+                border: "2px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              👑
+            </div>
             <div>
-              <p className="admin-label">{active.toUpperCase()}</p>
-              <h1>
-                {active === "Dashboard"
-                  ? "Good morning, Admin"
-                  : `${active} Management`}
-              </h1>
-              <p>
-                {active === "Dashboard"
-                  ? "Operational overview and live MongoDB Atlas metrics for Addis Kiray."
-                  : `Review and manage ${active.toLowerCase()} across Addis Ababa.`}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 800 }}>Admin Operations Console</h1>
+                <span
+                  style={{
+                    background: "rgba(11, 136, 121, 0.35)",
+                    color: "#8bd9ca",
+                    border: "1px solid #8bd9ca",
+                    padding: "2px 8px",
+                    borderRadius: "99px",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                  }}
+                >
+                  Super Admin
+                </span>
+              </div>
+              <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#c2d6e4" }}>
+                System Status: <b>Online</b> · Database: <b>MongoDB Atlas</b> · Addis Ababa Marketplace Active
               </p>
             </div>
-            <button className="date" type="button">
-              Live Database ⌄
+          </div>
+
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              onClick={() => nav("/search")}
+              style={{
+                background: "#0b8879",
+                color: "#ffffff",
+                border: "none",
+                padding: "12px 18px",
+                borderRadius: "8px",
+                fontWeight: 800,
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              Public Marketplace →
             </button>
           </div>
+        </div>
 
-          {active === "Dashboard" && (
-            <>
-              <section className="attention">
-                <div className="section-title">
-                  <h2>Needs attention</h2>
-                  <button type="button" onClick={() => setActive("Verification")}>
-                    View all →
-                  </button>
-                </div>
-                <div className="attention-grid">
-                  {[
-                    [`${queue.length || kpis.pendingProperties}`, "Listings waiting for review", "Important"],
-                    ["1", "Landlord verification requests", "Normal"],
-                    [`${kpis.openReports}`, "Reported listings", "Urgent"],
-                    ["0", "Unresolved support cases", "Important"],
-                    ["0", "Suspicious activity alerts", "Urgent"],
-                  ].map(([num, text, type]) => (
-                    <button
-                      onClick={() => {
-                        if (text.includes("Listings")) setActive("Verification");
-                        else showToast(`Opening queue: ${text}`);
-                      }}
-                      key={text}
-                      type="button"
-                    >
-                      <b className={type.toLowerCase()}>{num}</b>
-                      <span>{text}</span>
-                      <small>{type}</small>
-                    </button>
-                  ))}
-                </div>
-              </section>
+        {/* Toast Alert */}
+        {toast && (
+          <div
+            style={{
+              background: "#e3f7f2",
+              border: "1px solid #0b8879",
+              color: "#075e53",
+              padding: "12px 20px",
+              borderRadius: "8px",
+              marginBottom: "24px",
+              fontSize: "12px",
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <Icon name="check" /> {toast}
+          </div>
+        )}
 
-              <section>
-                <div className="section-title">
-                  <h2>Marketplace overview (MongoDB Atlas)</h2>
-                  <span style={{ color: "#087d70", fontWeight: 700 }}>● Connected Live</span>
-                </div>
-                <div className="kpis">
-                  {[
-                    [`${kpis.activeProperties}`, "Active properties", "In database"],
-                    [`${kpis.availableProperties}`, "Available homes", "Ready for rent"],
-                    [`${kpis.totalTenants}`, "Registered tenants", "Active searchers"],
-                    [`${kpis.totalLandlords}`, "Registered landlords", "Verified owners"],
-                    [`${queue.length || kpis.pendingProperties}`, "Pending listings", "Needs review"],
-                    ["1", "ID Verifications", "Needs review"],
-                    [`${kpis.openReports}`, "Open reports", "Trust queue"],
-                    [`${kpis.upcomingViewings}`, "Upcoming viewings", "Scheduled"],
-                  ].map(([n, x, s]) => (
-                    <article key={x}>
-                      <b>{n}</b>
-                      <span>{x}</span>
-                      <small>{s}</small>
-                    </article>
-                  ))}
-                </div>
-              </section>
+        {/* Navigation Tabs */}
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            borderBottom: "1px solid #d9e4eb",
+            paddingBottom: "12px",
+            marginBottom: "28px",
+          }}
+        >
+          {[
+            { id: "dashboard", label: "📊 KPI Analytics", count: null },
+            { id: "queue", label: "🛡️ Moderation Queue", count: queue.length > 0 ? queue.length : null },
+            { id: "users", label: "👥 User Management", count: usersList.length },
+            { id: "properties", label: "🏡 All Listings", count: propertiesList.length },
+            { id: "reports", label: "🚩 Trust Reports", count: reportsList.length > 0 ? reportsList.length : null },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              style={{
+                background: activeTab === tab.id ? "#0d345b" : "#ffffff",
+                color: activeTab === tab.id ? "#ffffff" : "#45627a",
+                border: activeTab === tab.id ? "none" : "1px solid #d4e0e8",
+                padding: "10px 18px",
+                borderRadius: "8px",
+                fontWeight: 700,
+                fontSize: "12px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {tab.label}
+              {tab.count !== null && (
+                <span
+                  style={{
+                    background: activeTab === tab.id ? "#0b8879" : "#e3edf2",
+                    color: activeTab === tab.id ? "#ffffff" : "#0d345b",
+                    padding: "1px 6px",
+                    borderRadius: "99px",
+                    fontSize: "10px",
+                  }}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-              <section className="admin-grid">
-                <article className="health">
-                  <div className="section-title">
-                    <div>
-                      <h2>Marketplace health</h2>
-                      <p>Monthly listing and inquiry growth in Addis Ababa</p>
-                    </div>
-                    <button type="button" onClick={() => setActive("Analytics")}>
-                      View analytics →
-                    </button>
-                  </div>
-                  <div className="chart-bars">
-                    {[35, 58, 47, 70, 55, 81, 67, 88, 73, 91, 84, 96].map(
-                      (x, i) => (
-                        <i style={{ height: `${x}%` }} key={i} />
-                      )
-                    )}
-                  </div>
-                  <div className="chart-labels">
-                    <span>Jan</span>
-                    <span>Mar</span>
-                    <span>May</span>
-                    <span>Jul</span>
-                    <span>Sep</span>
-                    <span>Nov</span>
-                  </div>
-                </article>
-
-                <article className="recent">
-                  <div className="section-title">
-                    <h2>Recent audit activity</h2>
-                    <button type="button" onClick={() => setActive("Audit Logs")}>
-                      View log →
-                    </button>
-                  </div>
-                  {[
-                    "Addis Kiray database synced with MongoDB Atlas",
-                    "Demo seed completed (Bole, Kazanchis, Yeka)",
-                    "Landlord verified (Kalkidan M.)",
-                    "Tenant inquiry logged for Sunlit 2-Bed",
-                  ].map((x, i) => (
-                    <div key={x}>
-                      <span className={`act a${i}`}>{i + 1}</span>
-                      <p>
-                        <b>{x}</b>
-                        <small>
-                          {[
-                            "Just now",
-                            "10 minutes ago",
-                            "20 minutes ago",
-                            "30 minutes ago",
-                          ][i]}
-                        </small>
-                      </p>
-                    </div>
-                  ))}
-                </article>
-              </section>
-
-              <section className="queue">
-                <div className="section-title">
-                  <div>
-                    <h2>Property review queue</h2>
-                    <p>Review listings before they go live on Addis Kiray.</p>
-                  </div>
-                  <button type="button" onClick={() => setActive("Properties")}>
-                    Open all properties →
-                  </button>
-                </div>
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Property</th>
-                        <th>Landlord</th>
-                        <th>Location</th>
-                        <th>Rent</th>
-                        <th>Verification</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {queue.length > 0 ? (
-                        queue.map((item) => (
-                          <tr key={item._id}>
-                            <td><b>{item.title}</b></td>
-                            <td>{item.owner?.name || "Landlord"}</td>
-                            <td>{item.location?.subCity}</td>
-                            <td>{Number(item.price).toLocaleString()} ETB</td>
-                            <td><span className="pending">● Pending Review</span></td>
-                            <td>
-                              <div style={{ display: "flex", gap: "6px" }}>
-                                <button type="button" onClick={() => handleModerate(item._id, "Approved")}>
-                                  Approve
-                                </button>
-                                <button type="button" onClick={() => handleModerate(item._id, "Rejected")} style={{ background: "#fdf2f2", color: "#c53030", borderColor: "#feb2b2" }}>
-                                  Reject
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        propertiesList.map((p) => (
-                          <tr key={p.id}>
-                            <td><b>{p.title}</b></td>
-                            <td>{p.landlord}</td>
-                            <td>{p.area}</td>
-                            <td>{p.rent}</td>
-                            <td>
-                              <span style={{ color: "#087d70", fontWeight: 700 }}>● {p.status}</span>
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                onClick={() => showToast(`Inspecting listing: ${p.title}`)}
-                              >
-                                Inspect
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            </>
-          )}
-
-          {active === "Users" && (
-            <div className="queue">
-              <div className="section-title">
-                <h2>Registered Users ({usersList.length})</h2>
-                <button type="button" onClick={() => showToast("Exporting users CSV...")}>
-                  Export CSV
-                </button>
+        {/* TAB 1: KPI ANALYTICS */}
+        {activeTab === "dashboard" && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "18px", marginBottom: "32px" }}>
+              <div style={{ background: "#ffffff", padding: "20px", borderRadius: "12px", border: "1px solid #e1e9ed" }}>
+                <span style={{ color: "#6a8194", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                  Total Listings
+                </span>
+                <h2 style={{ fontSize: "28px", color: "#0d345b", margin: "6px 0 2px" }}>{propertiesList.length}</h2>
+                <small style={{ color: "#0b8879", fontSize: "10px", fontWeight: 700 }}>
+                  ● {kpis.availableProperties} Active in Atlas
+                </small>
               </div>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Role</th>
-                      <th>Email</th>
-                      <th>Status</th>
-                      <th>Joined</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {usersList.map((u) => (
-                      <tr key={u.email}>
-                        <td><b>{u.name}</b></td>
-                        <td>{u.role}</td>
-                        <td>{u.email}</td>
-                        <td>
-                          <span style={{ color: u.status === "Active" ? "#087d70" : "#ab751d", fontWeight: 700 }}>
-                            ● {u.status}
-                          </span>
-                        </td>
-                        <td>{u.joined}</td>
-                        <td>
-                          <button type="button" onClick={() => showToast(`User ${u.name} inspected`)}>
-                            Manage
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+              <div style={{ background: "#ffffff", padding: "20px", borderRadius: "12px", border: "1px solid #e1e9ed" }}>
+                <span style={{ color: "#6a8194", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                  Registered Users
+                </span>
+                <h2 style={{ fontSize: "28px", color: "#0d345b", margin: "6px 0 2px" }}>{usersList.length}</h2>
+                <small style={{ color: "#547188", fontSize: "10px" }}>
+                  {kpis.totalTenants} Tenants · {kpis.totalLandlords} Landlords
+                </small>
+              </div>
+
+              <div style={{ background: "#ffffff", padding: "20px", borderRadius: "12px", border: "1px solid #e1e9ed" }}>
+                <span style={{ color: "#6a8194", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                  Pending Moderation
+                </span>
+                <h2 style={{ fontSize: "28px", color: queue.length > 0 ? "#d97706" : "#0b8879", margin: "6px 0 2px" }}>
+                  {queue.length}
+                </h2>
+                <small style={{ color: "#547188", fontSize: "10px" }}>Awaiting review</small>
+              </div>
+
+              <div style={{ background: "#ffffff", padding: "20px", borderRadius: "12px", border: "1px solid #e1e9ed" }}>
+                <span style={{ color: "#6a8194", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                  Fraud & Quality Reports
+                </span>
+                <h2 style={{ fontSize: "28px", color: reportsList.length > 0 ? "#be123c" : "#0b8879", margin: "6px 0 2px" }}>
+                  {reportsList.length}
+                </h2>
+                <small style={{ color: "#547188", fontSize: "10px" }}>Tenant feedback</small>
               </div>
             </div>
-          )}
 
-          {active === "Properties" && (
-            <div className="queue">
-              <div className="section-title">
-                <h2>All Properties in Atlas ({propertiesList.length})</h2>
-                <button type="button" onClick={() => showToast("Filtering properties...")}>
-                  Filter
-                </button>
-              </div>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Landlord</th>
-                      <th>Area</th>
-                      <th>Rent</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {propertiesList.map((p) => (
-                      <tr key={p.title}>
-                        <td><b>{p.title}</b></td>
-                        <td>{p.landlord}</td>
-                        <td>{p.area}</td>
-                        <td style={{ fontWeight: 700 }}>{p.rent}</td>
-                        <td>
-                          <span style={{ color: p.status === "Published" ? "#087d70" : "#ab751d", fontWeight: 700 }}>
-                            ● {p.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button type="button" onClick={() => showToast(`Inspecting ${p.title}`)}>
-                            Inspect
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Quick Actions Panel */}
+            <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e1e9ed", padding: "24px" }}>
+              <h3 style={{ margin: "0 0 16px", color: "#0d345b", fontSize: "16px" }}>Platform Operations Summary</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+                <div style={{ background: "#f0f8f6", padding: "16px", borderRadius: "8px", border: "1px solid #c8ded9" }}>
+                  <b style={{ color: "#075e53", fontSize: "13px" }}>Listing Freshness Index</b>
+                  <p style={{ margin: "6px 0 0", color: "#456278", fontSize: "11px" }}>
+                    100% of active properties have verified freshness timestamps in Bole, Kazanchis, and CMC.
+                  </p>
+                </div>
+                <div style={{ background: "#f0f8f6", padding: "16px", borderRadius: "8px", border: "1px solid #c8ded9" }}>
+                  <b style={{ color: "#075e53", fontSize: "13px" }}>Addis AI Natural Language Engine</b>
+                  <p style={{ margin: "6px 0 0", color: "#456278", fontSize: "11px" }}>
+                    Gemini 2.0 Flash active for Amharic and English conversational rental matching.
+                  </p>
+                </div>
+                <div style={{ background: "#f0f8f6", padding: "16px", borderRadius: "8px", border: "1px solid #c8ded9" }}>
+                  <b style={{ color: "#075e53", fontSize: "13px" }}>Verified Landlord ID Tier</b>
+                  <p style={{ margin: "6px 0 0", color: "#456278", fontSize: "11px" }}>
+                    All demo landlords verified with SMS OTP and Kebele ID representation.
+                  </p>
+                </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {(active === "Verification" || active === "Reports" || active === "Analytics" || active === "Messages" || active === "Audit Logs") && (
-            <div className="queue" style={{ padding: "28px", textAlign: "center" }}>
-              <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#e1f4ef", color: "#0b8879", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
-                <Icon name={nav.find((x) => x[0] === active)?.[1] || "grid"} />
-              </div>
-              <h2 style={{ fontSize: "20px", color: "#10345b", margin: "0 0 8px" }}>
-                {active} Queue Connected
-              </h2>
-              <p style={{ color: "#6e8496", fontSize: "12px", maxWidth: "420px", margin: "0 auto 20px" }}>
-                Active records are synced with Addis Kiray MongoDB services.
+        {/* TAB 2: MODERATION QUEUE */}
+        {activeTab === "queue" && (
+          <div>
+            <div style={{ marginBottom: "20px" }}>
+              <h2 style={{ margin: 0, fontSize: "20px", color: "#0d345b" }}>Pending Property Review Queue</h2>
+              <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#60788c" }}>
+                Inspect newly submitted landlord properties for accuracy, photos, and fair rental terms.
               </p>
-              <button
-                className="btn"
-                type="button"
-                onClick={() => {
-                  showToast(`${active} records reviewed`);
-                  setActive("Dashboard");
-                }}
-              >
-                Return to Dashboard
-              </button>
             </div>
-          )}
-        </div>
-      </section>
 
-      {toast && (
-        <div className="admin-toast">
-          <Icon name="check" />
-          <span>{toast}</span>
-          <button onClick={() => setToast("")} type="button">
-            ×
-          </button>
-        </div>
-      )}
-    </main>
+            {queue.length === 0 ? (
+              <div style={{ background: "#ffffff", padding: "48px", borderRadius: "12px", textAlign: "center", border: "1px solid #e1e9ed" }}>
+                <p style={{ color: "#0b8879", fontSize: "16px", fontWeight: 700 }}>✓ Moderation Queue is Clean!</p>
+                <p style={{ color: "#647d91", fontSize: "12px" }}>All landlord listings are currently approved and published on search.</p>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: "16px" }}>
+                {queue.map((item) => (
+                  <div
+                    key={item._id}
+                    style={{
+                      background: "#ffffff",
+                      borderRadius: "12px",
+                      border: "1px solid #e1e9ee",
+                      padding: "20px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: "20px",
+                    }}
+                  >
+                    <div>
+                      <h3 style={{ margin: "0 0 4px", fontSize: "16px", color: "#0d345b" }}>{item.title}</h3>
+                      <p style={{ margin: 0, color: "#547188", fontSize: "12px" }}>
+                        📍 {item.location?.neighborhood}, {item.location?.subCity} · ETB {Number(item.price).toLocaleString()} /mo
+                      </p>
+                      <small style={{ color: "#6a8194", fontSize: "11px" }}>
+                        Submitted by: <b>{item.owner?.name}</b> ({item.owner?.email})
+                      </small>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button
+                        onClick={() => nav(`/property/${item._id}`)}
+                        style={{
+                          background: "#f0f5f7",
+                          color: "#173858",
+                          border: "1px solid #c8d9e2",
+                          padding: "8px 14px",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Inspect Listing
+                      </button>
+                      <button
+                        onClick={() => moderate(item._id, "Approved")}
+                        style={{
+                          background: "#0b8879",
+                          color: "#ffffff",
+                          border: "none",
+                          padding: "8px 16px",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          cursor: "pointer",
+                        }}
+                      >
+                        ✓ Approve & Publish
+                      </button>
+                      <button
+                        onClick={() => moderate(item._id, "Rejected")}
+                        style={{
+                          background: "#fff1f2",
+                          color: "#be123c",
+                          border: "1px solid #fecdd3",
+                          padding: "8px 14px",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: USER MANAGEMENT */}
+        {activeTab === "users" && (
+          <div style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid #e1e9ee", padding: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "18px", color: "#0d345b" }}>User Directory ({usersList.length})</h2>
+                <p style={{ margin: "2px 0 0", color: "#647d91", fontSize: "11px" }}>Manage tenants, landlords, and admin credentials.</p>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input
+                  type="text"
+                  placeholder="Search user by name or email..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbdde4",
+                    fontSize: "12px",
+                    width: "240px",
+                  }}
+                />
+                <select
+                  value={userRoleFilter}
+                  onChange={(e) => setUserRoleFilter(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbdde4",
+                    fontSize: "12px",
+                    background: "#fff",
+                  }}
+                >
+                  <option value="all">All Roles</option>
+                  <option value="tenant">Tenants</option>
+                  <option value="landlord">Landlords</option>
+                  <option value="admin">Admins</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "12px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #e5edf0", color: "#647c90" }}>
+                    <th style={{ padding: "10px" }}>User</th>
+                    <th style={{ padding: "10px" }}>Role</th>
+                    <th style={{ padding: "10px" }}>Email</th>
+                    <th style={{ padding: "10px" }}>Phone</th>
+                    <th style={{ padding: "10px" }}>Verification Tier</th>
+                    <th style={{ padding: "10px", textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((u) => (
+                    <tr key={u._id} style={{ borderBottom: "1px solid #f0f4f7" }}>
+                      <td style={{ padding: "12px 10px", fontWeight: 700, color: "#11355b" }}>{u.name}</td>
+                      <td style={{ padding: "12px 10px" }}>
+                        <span
+                          style={{
+                            background: u.role === "admin" ? "#fef3c7" : u.role === "landlord" ? "#e0f2fe" : "#f0fdf4",
+                            color: u.role === "admin" ? "#92400e" : u.role === "landlord" ? "#0369a1" : "#166534",
+                            padding: "2px 8px",
+                            borderRadius: "99px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {u.role.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 10px", color: "#547188" }}>{u.email}</td>
+                      <td style={{ padding: "12px 10px", color: "#547188" }}>{u.phone || "—"}</td>
+                      <td style={{ padding: "12px 10px" }}>
+                        <span
+                          style={{
+                            background: u.verificationTier?.includes("verified") ? "#e3f7f2" : "#f3f4f6",
+                            color: u.verificationTier?.includes("verified") ? "#075e53" : "#4b5563",
+                            padding: "2px 8px",
+                            borderRadius: "99px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          ✓ {u.verificationTier || "unverified"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 10px", textAlign: "right" }}>
+                        <button
+                          onClick={() => toggleUserVerification(u._id)}
+                          style={{
+                            background: "#f0f6f5",
+                            border: "1px solid #cbdde3",
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            color: "#173858",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Toggle Verification
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: ALL PROPERTIES */}
+        {activeTab === "properties" && (
+          <div style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid #e1e9ee", padding: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "18px", color: "#0d345b" }}>All Platform Listings ({propertiesList.length})</h2>
+                <p style={{ margin: "2px 0 0", color: "#647d91", fontSize: "11px" }}>Manage and review all Addis Ababa listings.</p>
+              </div>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "12px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #e5edf0", color: "#647c90" }}>
+                    <th style={{ padding: "10px" }}>Property</th>
+                    <th style={{ padding: "10px" }}>Sub-City</th>
+                    <th style={{ padding: "10px" }}>Price / mo</th>
+                    <th style={{ padding: "10px" }}>Type</th>
+                    <th style={{ padding: "10px" }}>Status</th>
+                    <th style={{ padding: "10px" }}>Verification</th>
+                    <th style={{ padding: "10px", textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {propertiesList.map((p) => (
+                    <tr key={p._id} style={{ borderBottom: "1px solid #f0f4f7" }}>
+                      <td style={{ padding: "12px 10px", fontWeight: 700, color: "#11355b" }}>
+                        <Link to={`/property/${p._id}`} style={{ color: "#11355b", textDecoration: "none" }}>
+                          {p.title}
+                        </Link>
+                      </td>
+                      <td style={{ padding: "12px 10px", color: "#547188" }}>{p.location?.subCity}</td>
+                      <td style={{ padding: "12px 10px", fontWeight: 700, color: "#0b8879" }}>
+                        ETB {Number(p.price).toLocaleString()}
+                      </td>
+                      <td style={{ padding: "12px 10px", color: "#547188" }}>{p.propertyType}</td>
+                      <td style={{ padding: "12px 10px" }}>
+                        <span
+                          style={{
+                            background: p.availability?.status === "Available" ? "#e3f7f2" : "#fef3c7",
+                            color: p.availability?.status === "Available" ? "#075e53" : "#92400e",
+                            padding: "2px 8px",
+                            borderRadius: "99px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          ● {p.availability?.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 10px" }}>
+                        <span
+                          style={{
+                            background: p.verification?.status === "Approved" ? "#e0f2fe" : "#f3f4f6",
+                            color: p.verification?.status === "Approved" ? "#0369a1" : "#4b5563",
+                            padding: "2px 8px",
+                            borderRadius: "99px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          ✓ {p.verification?.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 10px", textAlign: "right" }}>
+                        <button
+                          onClick={() => deleteProp(p._id)}
+                          style={{
+                            background: "#fff1f2",
+                            color: "#be123c",
+                            border: "1px solid #fecdd3",
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: TRUST REPORTS */}
+        {activeTab === "reports" && (
+          <div style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid #e1e9ee", padding: "24px" }}>
+            <div style={{ marginBottom: "20px" }}>
+              <h2 style={{ margin: 0, fontSize: "18px", color: "#0d345b" }}>Trust & Safety Fraud Reports</h2>
+              <p style={{ margin: "2px 0 0", color: "#647d91", fontSize: "11px" }}>
+                Tenant reports on inaccurate pricing, fake landlord details, or unavailable properties.
+              </p>
+            </div>
+
+            {reportsList.length === 0 ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>
+                <p style={{ color: "#0b8879", fontWeight: 700 }}>✓ No open fraud or safety reports.</p>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: "14px" }}>
+                {reportsList.map((r) => (
+                  <div
+                    key={r._id}
+                    style={{
+                      background: "#f8faf9",
+                      padding: "16px 20px",
+                      borderRadius: "8px",
+                      border: "1px solid #e1e9ee",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>
+                      <b style={{ color: "#11355b", fontSize: "13px" }}>Reason: {r.reason}</b>
+                      <p style={{ margin: "4px 0 0", color: "#547188", fontSize: "11px" }}>{r.description || "No extra notes"}</p>
+                      <small style={{ color: "#6a8194", fontSize: "10px" }}>
+                        Reported by: {r.reporter?.name || "Tenant"} · Status: <b>{r.status}</b>
+                      </small>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      {r.status !== "resolved" && (
+                        <button
+                          onClick={() => updateReport(r._id, "resolved")}
+                          style={{
+                            background: "#0b8879",
+                            color: "#ffffff",
+                            border: "none",
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          ✓ Resolve
+                        </button>
+                      )}
+                      {r.status !== "dismissed" && (
+                        <button
+                          onClick={() => updateReport(r._id, "dismissed")}
+                          style={{
+                            background: "#f0f4f7",
+                            color: "#547188",
+                            border: "1px solid #cbdde4",
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Dismiss
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
   );
 }
