@@ -8,6 +8,7 @@ export type IconName =
   | "filter"
   | "close"
   | "spark"
+  | "sparkles"
   | "arrow"
   | "menu"
   | "map"
@@ -32,10 +33,23 @@ export type IconName =
   | "chart"
   | "file"
   | "users"
+  | "user"
   | "grid"
   | "attach"
   | "send"
-  | "photo";
+  | "photo"
+  | "plus"
+  | "trash"
+  | "edit"
+  | "car"
+  | "phone"
+  | "building"
+  | "money"
+  | "clock"
+  | "bolt"
+  | "water"
+  | "crown"
+  | "google";
 
 const iconPaths: Record<string, React.ReactNode> = {
   search: (
@@ -57,6 +71,9 @@ const iconPaths: Record<string, React.ReactNode> = {
   filter: <path d="M4 6h16M7 12h10m-7 6h4" />,
   close: <path d="m5 5 14 14M19 5 5 19" />,
   spark: (
+    <path d="m12 2 1.7 6.3L20 10l-6.3 1.7L12 18l-1.7-6.3L4 10l6.3-1.7L12 2Zm7 13 1 3.5 3.5 1-3.5 1-1 3.5-1-3.5-3.5-1 3.5-1 1-3.5Z" />
+  ),
+  sparkles: (
     <path d="m12 2 1.7 6.3L20 10l-6.3 1.7L12 18l-1.7-6.3L4 10l6.3-1.7L12 2Zm7 13 1 3.5 3.5 1-3.5 1-1 3.5-1-3.5-3.5-1 3.5-1 1-3.5Z" />
   ),
   arrow: <path d="M4 12h16m-6-6 6 6-6 6" />,
@@ -160,6 +177,12 @@ const iconPaths: Record<string, React.ReactNode> = {
       <path d="M3 20v-1a6 6 0 0 1 12 0v1M16 4a3 3 0 0 1 0 6m3 10v-1a6 6 0 0 0-3-5.2" />
     </>
   ),
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M5 20v-1a7 7 0 0 1 14 0v1" />
+    </>
+  ),
   grid: (
     <>
       <rect x="3" y="3" width="7" height="7" />
@@ -179,6 +202,54 @@ const iconPaths: Record<string, React.ReactNode> = {
       <path d="m3 17 5-5 3 3 3-3 7 7" />
     </>
   ),
+  plus: <path d="M12 5v14M5 12h14" />,
+  trash: (
+    <>
+      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+    </>
+  ),
+  edit: (
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  ),
+  car: (
+    <>
+      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2 12v4c0 .6.4 1 1 1h2" />
+      <circle cx="7" cy="17" r="2" />
+      <path d="M9 17h6" />
+      <circle cx="17" cy="17" r="2" />
+    </>
+  ),
+  phone: (
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+  ),
+  building: (
+    <>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <path d="M9 22v-4h6v4M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01" />
+    </>
+  ),
+  money: (
+    <>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M6 12h.01M18 12h.01" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </>
+  ),
+  bolt: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />,
+  water: <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />,
+  crown: <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5z" />,
+  google: (
+    <path
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      fill="currentColor"
+    />
+  ),
 };
 
 export default function Icon({
@@ -195,13 +266,15 @@ export default function Icon({
   return (
     <svg
       className={className}
-      style={style}
+      style={{ display: "inline-block", verticalAlign: "middle", ...style }}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
+      width="1em"
+      height="1em"
     >
       {path}
     </svg>
