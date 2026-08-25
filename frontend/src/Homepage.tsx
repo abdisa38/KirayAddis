@@ -344,6 +344,7 @@ export default function Homepage() {
                 >
                   {loc}
                 </button>
+              ))}
               <Link to="/ai" style={{ marginLeft: "auto", color: "#087d70", fontSize: "10px", fontWeight: 800, textDecoration: "none" }}>
                 Ask Addis AI Assistant →
               </Link>
