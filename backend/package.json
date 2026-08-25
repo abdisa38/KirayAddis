@@ -9,10 +9,17 @@
     "start": "node dist/server.js",
     "seed": "tsx src/seed.ts"
   },
-  "keywords": ["mern", "real-estate", "addis-ababa", "express", "mongodb"],
+  "keywords": [
+    "mern",
+    "real-estate",
+    "addis-ababa",
+    "express",
+    "mongodb"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

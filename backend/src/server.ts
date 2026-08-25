@@ -12,6 +12,7 @@ import propertyRoutes from "./routes/propertyRoutes.js";
 import tenantRoutes from "./routes/tenantRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +53,7 @@ app.use("/api/properties", propertyRoutes);
 app.use("/api/tenant", tenantRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Centralized Error Handling Middleware
 app.use(errorHandler);
