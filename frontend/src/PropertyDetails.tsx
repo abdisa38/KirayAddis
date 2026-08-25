@@ -6,13 +6,6 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Icon from "./components/Icon";
 
-const imgs = [
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
-];
-
 function Btn({
   children,
   kind = "primary",
@@ -26,39 +19,6 @@ function Btn({
     <button onClick={onClick} className={`btn ${kind}`} type="button">
       {children}
     </button>
-  );
-}
-
-function Similar({
-  i,
-  name,
-  price,
-  match,
-}: {
-  i: number;
-  name: string;
-  price: string;
-  match: string;
-}) {
-  return (
-    <article className="similar" style={{ cursor: "pointer" }}>
-      <img src={imgs[i % 4]} alt={name} />
-      <span className="tiny-verify">
-        <Icon name="check" />
-        Verified
-      </span>
-      <div>
-        <h3>{name}</h3>
-        <p>
-          <Icon name="pin" />
-          Bole, Addis Ababa
-        </p>
-        <b>
-          ETB {price} <em>/ month</em>
-        </b>
-        <span className="mini-score">{match}% Match</span>
-      </div>
-    </article>
   );
 }
 
@@ -78,51 +38,54 @@ export default function PropertyDetails() {
   const [viewingDate, setViewingDate] = useState("2026-08-25");
   const [viewingTime, setViewingTime] = useState("10:00 AM");
   const [propData, setPropData] = useState<any>(null);
+  const [similarHomes, setSimilarHomes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const nav = useNavigate();
 
   useEffect(() => {
-    if (id && id !== "sunlit-2bed" && id.length === 24) {
-      fetch(`http://localhost:5000/api/properties/${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.property) {
-            setPropData(data.property);
-          }
-        })
-        .catch(() => {});
-    }
+    if (!id) return;
+    setLoading(true);
+
+    apiRequest(`/properties/${id}`)
+      .then((data: any) => {
+        if (data.success && data.property) {
+          setPropData(data.property);
+          // Fetch similar homes in the same sub-city or neighborhood
+          const subCity = data.property.location?.subCity || "";
+          apiRequest(`/properties?limit=3&subCity=${encodeURIComponent(subCity)}`)
+            .then((simData: any) => {
+              if (simData.success && simData.properties) {
+                setSimilarHomes(simData.properties.filter((p: any) => p._id !== id));
+              }
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [id]);
 
-  const propertyTitle = propData?.title || "Sunlit Two-Bedroom Apartment";
-  const propertyPrice = propData?.price ? Number(propData.price).toLocaleString() : "42,000";
-  const propertySubCity = propData?.location?.subCity || "Bole";
-  const propertyNeighborhood = propData?.location?.neighborhood || "Bole Medhanealem";
-  const propertyLandmark = propData?.location?.landmark || "Near Edna Mall (1.3 km)";
+  const propertyTitle = propData?.title || "Addis Ababa Rental Property";
+  const propertyPrice = propData?.price ? Number(propData.price).toLocaleString() : "—";
+  const propertySubCity = propData?.location?.subCity || "Addis Ababa";
+  const propertyNeighborhood = propData?.location?.neighborhood || "Central District";
+  const propertyLandmark = propData?.location?.landmark || "Centrally located";
   const propertyBedrooms = propData?.bedrooms || 2;
-  const propertyBathrooms = propData?.bathrooms || 2;
-  const propertyArea = propData?.area || 92;
+  const propertyBathrooms = propData?.bathrooms || 1;
+  const propertyArea = propData?.area || 85;
   const propertyType = propData?.propertyType || "Apartment";
   const matchScore = propData?.matchScore || 94;
-  const landlordName = propData?.owner?.name || "Kalkidan M.";
-  const propertyDescription =
-    propData?.description ||
-    "Set on a quiet street in Bole, this bright two-bedroom apartment offers a generous living space, practical kitchen, and a balcony that catches the afternoon light. Close enough to the city’s everyday energy, with enough room to step away from it.";
+  const landlordName = propData?.owner?.name || "Verified Landlord";
+  const propertyDescription = propData?.description || "Comfortable rental property in Addis Ababa with quality amenities.";
+  const propertyMedia: string[] = propData?.media?.map((m: any) => m.url) || [
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
+  ];
 
-  const amenitiesList = propData?.amenities?.length
+  const amenitiesList: string[] = propData?.amenities?.length
     ? propData.amenities
-    : [
-        "Parking",
-        "Water",
-        "Electricity",
-        "Internet",
-        "24/7 security",
-        "Elevator",
-        "Balcony",
-        "Furnished kitchen",
-        "Generator",
-        "CCTV",
-        "Compound",
-      ];
+    : ["Water", "Water tank", "Electricity", "24/7 security", "Parking"];
 
   const handleModalSubmit = async () => {
     if (contact) {
@@ -176,6 +139,18 @@ export default function PropertyDetails() {
     }
   };
 
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f8fbfa" }}>
+        <Navbar />
+        <div style={{ flex: 1, display: "grid", placeItems: "center", padding: "60px 20px" }}>
+          <p style={{ color: "#5a758a", fontSize: "14px" }}>Loading property details from database...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <main className="details">
       <Navbar />
@@ -184,19 +159,17 @@ export default function PropertyDetails() {
         <div className="crumb">
           <Link to="/">Home</Link>
           <span>/</span>
-          <Link to="/search">{propertySubCity}</Link>
+          <Link to={`/search?location=${encodeURIComponent(propertySubCity)}`}>{propertySubCity}</Link>
           <span>/</span>
-          <Link to="/search">{propertyType}s</Link>
+          <Link to={`/search?propertyType=${encodeURIComponent(propertyType)}`}>{propertyType}s</Link>
           <span>/</span>
           <b>{propertyTitle}</b>
         </div>
 
+        {/* Dynamic Unique Photo Gallery */}
         <section className="gallery">
           <div className="main-shot">
-            <img
-              src={propData?.media?.[0]?.url || imgs[0]}
-              alt={propertyTitle}
-            />
+            <img src={propertyMedia[0]} alt={propertyTitle} />
             <div className="gallery-actions">
               <Link to="/search" aria-label="Back to search">
                 <Icon name="arrow" />
@@ -224,16 +197,17 @@ export default function PropertyDetails() {
               onClick={() => setGallery(true)}
               type="button"
             >
-              ▣ {propData?.media?.length || 12} photos
+              <Icon name="photo" style={{ marginRight: "6px" }} />
+              {propertyMedia.length} photos
             </button>
           </div>
 
           <div className="gallery-side">
-            <img src={propData?.media?.[1]?.url || imgs[1]} alt="Interior" />
+            <img src={propertyMedia[1] || propertyMedia[0]} alt={`${propertyTitle} interior`} />
             <div className="video">
-              <img src={propData?.media?.[2]?.url || imgs[2]} alt="Preview" />
+              <img src={propertyMedia[2] || propertyMedia[0]} alt={`${propertyTitle} room view`} />
               <button onClick={() => setGallery(true)} type="button">
-                <Icon name="play" /> Property video
+                <Icon name="photo" /> View Gallery
               </button>
             </div>
             <button
@@ -241,7 +215,7 @@ export default function PropertyDetails() {
               className="view-photos"
               type="button"
             >
-              View all photos <span>→</span>
+              View all {propertyMedia.length} photos <Icon name="arrow" />
             </button>
           </div>
         </section>
@@ -254,7 +228,9 @@ export default function PropertyDetails() {
                   <span className="verified">
                     <Icon name="check" /> Property verified
                   </span>
-                  <span className="available">● Available now</span>
+                  <span className="available">
+                    <Icon name="check" style={{ color: "#0b8879", marginRight: "4px" }} /> Available now
+                  </span>
                 </div>
                 <h1>{propertyTitle}</h1>
                 <p className="location">
@@ -268,139 +244,78 @@ export default function PropertyDetails() {
             </div>
 
             <div className="facts">
-              <span>
-                <Icon name="bed" />
-                <b>{propertyBedrooms}</b> Bedrooms
-              </span>
-              <span>
-                <Icon name="bath" />
-                <b>{propertyBathrooms}</b> Bathrooms
-              </span>
-              <span>
-                <Icon name="area" />
-                <b>{propertyArea} m²</b> Area
-              </span>
-              <span>
-                <Icon name="spark" />
+              <div>
+                <b>{propertyBedrooms}</b>
+                <span>Bedrooms</span>
+              </div>
+              <div>
+                <b>{propertyBathrooms}</b>
+                <span>Bathrooms</span>
+              </div>
+              <div>
+                <b>{propertyArea} m²</b>
+                <span>Living space</span>
+              </div>
+              <div>
                 <b>{propertyType}</b>
-              </span>
+                <span>Property Type</span>
+              </div>
             </div>
 
-            <div className="mobile-price">
-              <b>
-                ETB {propertyPrice} <em>/ month</em>
-              </b>
-              <span>Deposit and rental terms available from landlord</span>
-            </div>
-
-            <nav className="detail-tabs">
-              {["About", "Amenities", "Location", "Landlord"].map((t) => (
+            <div className="tabs">
+              {["About", "Amenities", "Commute", "Landlord"].map((t) => (
                 <button
+                  key={t}
                   className={tab === t ? "active" : ""}
                   onClick={() => setTab(t)}
-                  key={t}
                   type="button"
                 >
                   {t}
                 </button>
               ))}
-            </nav>
+            </div>
 
             {(tab === "About" || tab === "all") && (
-              <section className="info-block" id="about-section">
-                <p className="eyebrow">ABOUT THIS HOME</p>
-                <h2>A calm, sun-filled place to come home to.</h2>
-                <p>{propertyDescription}</p>
-                {showFullDesc && (
-                  <p style={{ marginTop: "12px", borderTop: "1px dashed #dce6eb", paddingTop: "12px" }}>
-                    The property includes dedicated compound parking, 24/7 security with CCTV monitoring, backup water tanks (3,000L), and high-speed fiber internet wiring. Located within 5 minutes walk to local supermarkets, cafes, and public minibus lines.
-                  </p>
-                )}
-                <button
-                  className="read-more"
-                  type="button"
-                  onClick={() => setShowFullDesc(!showFullDesc)}
-                >
-                  {showFullDesc ? "Show less ↑" : "Read full description ↓"}
-                </button>
+              <section className="about-section">
+                <h2>About this home</h2>
+                <p className={showFullDesc ? "desc-full" : "desc"}>
+                  {propertyDescription}
+                </p>
+                <p style={{ marginTop: "12px", fontSize: "13px", color: "#546e82" }}>
+                  Landmark reference: <b>{propertyLandmark}</b>. Direct lease available with verified landlord representation on Addis Kiray.
+                </p>
               </section>
             )}
 
             {(tab === "Amenities" || tab === "all") && (
-              <section className="info-block" id="amenities-section">
-                <div className="block-heading">
-                  <div>
-                    <p className="eyebrow">AMENITIES</p>
-                    <h2>Everything you need, clearly listed.</h2>
-                  </div>
-                  <span>{amenitiesList.length} included</span>
-                </div>
-                <div className="amenities">
-                  {amenitiesList.map((x: string, i: number) => (
-                    <span key={x}>
-                      <i>{["P", "W", "E", "I", "S", "L"][i % 6]}</i>
-                      {x}
-                    </span>
+              <section className="amenities-section">
+                <h2>Amenities & Utilities</h2>
+                <div className="amenities-grid">
+                  {amenitiesList.map((a) => (
+                    <div key={a} className="amenity">
+                      <Icon name="check" style={{ color: "#0b8879" }} />
+                      <span>{a}</span>
+                    </div>
                   ))}
                 </div>
               </section>
             )}
 
-            {(tab === "About" || tab === "all") && (
-              <section className="info-block terms">
-                <p className="eyebrow">RENTAL TERMS & AVAILABILITY</p>
-                <div className="term-grid">
-                  <span>
-                    <b>Monthly rent</b>
-                    <strong>ETB {propertyPrice}</strong>
-                  </span>
-                  <span>
-                    <b>Availability</b>
-                    <strong className="green">Available now</strong>
-                  </span>
-                  <span>
-                    <b>Minimum term</b>
-                    <strong>12 months</strong>
-                  </span>
-                  <span>
-                    <b>Furnishing</b>
-                    <strong>{propData?.rentalTerms?.furnishing || "Partially furnished"}</strong>
-                  </span>
-                </div>
-                <p className="fresh">
-                  ✓ Recently confirmed · The availability was updated today in MongoDB Atlas.
+            {(tab === "Commute" || tab === "all") && (
+              <section className="commute-section">
+                <h2>Commute & Neighborhood Proximity</h2>
+                <p style={{ fontSize: "13px", color: "#567084" }}>
+                  Estimated travel times from {propertyNeighborhood}:
                 </p>
-              </section>
-            )}
-
-            {(tab === "Location" || tab === "all") && (
-              <section className="location-block" id="location-section">
-                <div>
-                  <p className="eyebrow">LOCATION & COMMUTE</p>
-                  <h2>Near the places that shape your day.</h2>
-                  <p>
-                    Located in {propertySubCity}, with a straightforward commute across the city.
-                  </p>
-                  <div className="commute-card">
-                    <Icon name="pin" />
-                    <span>
-                      <b>24 min</b> to Bole — Edna Mall area
-                      <small>{propertyLandmark} · live estimate</small>
-                    </span>
-                    <button type="button" onClick={() => nav("/search")}>
-                      Change destination
-                    </button>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "12px" }}>
+                  <div style={{ background: "#f0f6f5", padding: "12px", borderRadius: "8px" }}>
+                    <b style={{ color: "#11355b", fontSize: "13px" }}>Bole / Airport Corridor</b>
+                    <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#60798d" }}>15 - 25 min via ring road</p>
                   </div>
-                  <div className="nearby">
-                    <span>✦ {propertyLandmark}</span>
-                    <span>✦ Public transport <b>5 min walk</b></span>
+                  <div style={{ background: "#f0f6f5", padding: "12px", borderRadius: "8px" }}>
+                    <b style={{ color: "#11355b", fontSize: "13px" }}>Kazanchis / UNECA Hub</b>
+                    <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#60798d" }}>10 - 20 min direct access</p>
                   </div>
-                </div>
-                <div className="mini-map">
-                  <div className="roads" />
-                  <span>{propertySubCity}</span>
-                  <i className="spot">⌂</i>
-                  <b>Addis Ababa</b>
                 </div>
               </section>
             )}
@@ -416,10 +331,10 @@ export default function PropertyDetails() {
                   <span className="verified">
                     <Icon name="check" /> Landlord verified
                   </span>
-                  <p className="response">Usually responds within a few hours</p>
+                  <p className="response">Usually responds within a few hours on Addis Kiray</p>
                 </div>
                 <button type="button" onClick={() => setContact(true)}>
-                  Message Landlord →
+                  Message Landlord <Icon name="arrow" />
                 </button>
               </section>
             )}
@@ -438,16 +353,16 @@ export default function PropertyDetails() {
             <b className="price">
               ETB {propertyPrice} <em>/ month</em>
             </b>
-            <p>Deposit and rental terms available from landlord.</p>
+            <p>Deposit and contract terms confirmed with landlord.</p>
             <div className="match-box">
               <span className="score">
                 {matchScore}%<small>Match</small>
               </span>
               <div>
                 <b>Strong match for your needs</b>
-                <p>Budget, location and commute fit your search.</p>
+                <p>Budget, location and utilities fit your search.</p>
                 <button type="button" onClick={() => nav("/ai")}>
-                  Why this matches →
+                  Why this matches <Icon name="arrow" />
                 </button>
               </div>
             </div>
@@ -472,187 +387,176 @@ export default function PropertyDetails() {
               </button>
             </div>
             <p className="trust-note">
-              Verification communicates a completed check — not a guarantee of safety.
+              Verification communicates a completed check — not an absolute guarantee of safety.
             </p>
           </aside>
         </section>
       </div>
 
-      <section className="similar-section">
-        <div className="details-wrap">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">MORE TO EXPLORE</p>
-              <h2>You might also like</h2>
+      {/* Real Similar Homes Section */}
+      {similarHomes.length > 0 && (
+        <section className="similar-section">
+          <div className="details-wrap">
+            <div className="section-head">
+              <div>
+                <p className="eyebrow">MORE TO EXPLORE</p>
+                <h2>Similar homes in {propertySubCity}</h2>
+              </div>
+              <Link to={`/search?location=${encodeURIComponent(propertySubCity)}`}>
+                View all in {propertySubCity} →
+              </Link>
             </div>
-            <Link to="/search">View similar homes →</Link>
+            <div className="similar-grid">
+              {similarHomes.map((sim) => {
+                const cover = sim.media?.find((m: any) => m.isCover) || sim.media?.[0];
+                return (
+                  <article
+                    key={sim._id}
+                    className="similar"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => nav(`/property/${sim._id}`)}
+                  >
+                    <img
+                      src={cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"}
+                      alt={sim.title}
+                    />
+                    <span className="tiny-verify">
+                      <Icon name="check" /> Verified
+                    </span>
+                    <div>
+                      <h3>{sim.title}</h3>
+                      <p>
+                        <Icon name="pin" />
+                        {sim.location?.neighborhood || sim.location?.subCity}, Addis Ababa
+                      </p>
+                      <b>
+                        ETB {Number(sim.price).toLocaleString()} <em>/ month</em>
+                      </b>
+                      <span className="mini-score">{sim.matchScore || 90}% Match</span>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </div>
-          <div className="similar-grid">
-            <Similar
-              i={1}
-              name="Modern apartment near Atlas"
-              price="36,000"
-              match="91"
-            />
-            <Similar
-              i={2}
-              name="Quiet home in a secure compound"
-              price="39,500"
-              match="88"
-            />
-            <Similar
-              i={3}
-              name="Bright two-bedroom with balcony"
-              price="34,000"
-              match="84"
-            />
+        </section>
+      )}
+
+      {/* Gallery Modal */}
+      {gallery && (
+        <div className="modal" onClick={() => setGallery(false)}>
+          <div className="modal-card gallery-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h2>{propertyTitle} — Photo Gallery</h2>
+              <button onClick={() => setGallery(false)} type="button">
+                <Icon name="close" />
+              </button>
+            </div>
+            <div className="modal-body" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", maxHeight: "70vh", overflowY: "auto" }}>
+              {propertyMedia.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`Photo ${i + 1}`}
+                  style={{ width: "100%", height: "240px", objectFit: "cover", borderRadius: "8px" }}
+                />
+              ))}
+            </div>
           </div>
         </div>
-      </section>
+      )}
+
+      {/* Contact Landlord Modal */}
+      {contact && (
+        <div className="modal" onClick={() => setContact(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h2>Contact {landlordName}</h2>
+              <button onClick={() => setContact(false)} type="button">
+                <Icon name="close" />
+              </button>
+            </div>
+            <div className="modal-body">
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px" }}>
+                Your inquiry message:
+              </label>
+              <textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Hi, I am interested in this listing. Is it available for viewing this week?"
+                style={{ width: "100%", height: "100px", padding: "10px", borderRadius: "8px", border: "1px solid #cbd9e1" }}
+              />
+              <button
+                className="btn"
+                style={{ width: "100%", marginTop: "14px" }}
+                type="button"
+                onClick={handleModalSubmit}
+              >
+                Send Message to Landlord
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request Viewing Modal */}
+      {viewing && (
+        <div className="modal" onClick={() => setViewing(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h2>Request Property Viewing</h2>
+              <button onClick={() => setViewing(false)} type="button">
+                <Icon name="close" />
+              </button>
+            </div>
+            <div className="modal-body">
+              {modalSuccess ? (
+                <div style={{ textAlign: "center", padding: "20px" }}>
+                  <Icon name="check" style={{ fontSize: "32px", color: "#0b8879" }} />
+                  <h3 style={{ marginTop: "8px" }}>Viewing Request Sent!</h3>
+                  <p style={{ fontSize: "12px", color: "#567084" }}>The landlord has been notified.</p>
+                </div>
+              ) : (
+                <>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                    Preferred Date:
+                  </label>
+                  <input
+                    type="date"
+                    value={viewingDate}
+                    onChange={(e) => setViewingDate(e.target.value)}
+                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd9e1", marginBottom: "12px" }}
+                  />
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
+                    Preferred Time:
+                  </label>
+                  <select
+                    value={viewingTime}
+                    onChange={(e) => setViewingTime(e.target.value)}
+                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd9e1", marginBottom: "12px" }}
+                  >
+                    <option value="09:00 AM">09:00 AM</option>
+                    <option value="10:00 AM">10:00 AM</option>
+                    <option value="02:00 PM">02:00 PM</option>
+                    <option value="04:00 PM">04:00 PM</option>
+                    <option value="05:30 PM">05:30 PM</option>
+                  </select>
+                  <button
+                    className="btn"
+                    style={{ width: "100%", marginTop: "8px" }}
+                    type="button"
+                    onClick={handleModalSubmit}
+                  >
+                    Submit Viewing Request
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
-
-      <div className="mobile-actions">
-        <Btn kind="outline" onClick={() => setContact(true)}>
-          <Icon name="message" /> Message
-        </Btn>
-        <Btn onClick={() => setViewing(true)}>
-          <Icon name="calendar" /> Request viewing
-        </Btn>
-      </div>
-
-      {share && (
-        <div className="modal-wrap">
-          <div className="modal">
-            <button
-              className="close"
-              onClick={() => setShare(false)}
-              type="button"
-            >
-              <Icon name="close" />
-            </button>
-            <p className="eyebrow">SHARE HOME</p>
-            <h2>Share this property</h2>
-            {["Copy link", "WhatsApp", "Telegram", "Email"].map((x) => (
-              <button
-                key={x}
-                type="button"
-                onClick={() => {
-                  navigator.clipboard?.writeText(window.location.href);
-                  setShare(false);
-                }}
-              >
-                {x}
-                <span>→</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {gallery && (
-        <div className="modal-wrap dark">
-          <div className="gallery-modal">
-            <button onClick={() => setGallery(false)} type="button">
-              <Icon name="close" /> Close
-            </button>
-            <img src={propData?.media?.[0]?.url || imgs[0]} alt="Expanded property" />
-            <span>1 of {propData?.media?.length || 12}</span>
-          </div>
-        </div>
-      )}
-
-      {(contact || viewing || report) && (
-        <div className="modal-wrap">
-          <div className="modal">
-            <button
-              className="close"
-              onClick={() => {
-                setContact(false);
-                setViewing(false);
-                setReport(false);
-              }}
-              type="button"
-            >
-              <Icon name="close" />
-            </button>
-            <p className="eyebrow">
-              {report
-                ? "REPORT PROPERTY"
-                : viewing
-                ? "REQUEST VIEWING"
-                : "CONTACT LANDLORD"}
-            </p>
-            <h2>
-              {modalSuccess
-                ? "Request Submitted!"
-                : report
-                ? "Help us review this listing"
-                : viewing
-                ? "Choose a time to view"
-                : "Send an inquiry"}
-            </h2>
-            <p>
-              {modalSuccess
-                ? "Thank you. Your request has been recorded."
-                : report
-                ? "Tell us what seems incorrect. Your report is reviewed carefully."
-                : viewing
-                ? "Select a preferred appointment time. The landlord will confirm availability."
-                : "Ask a question or introduce yourself. Your message goes directly to the landlord."}
-            </p>
-            {!modalSuccess && (
-              <>
-                {viewing && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", margin: "10px 0" }}>
-                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#12385e" }}>
-                      Preferred Date
-                      <input
-                        type="date"
-                        value={viewingDate}
-                        onChange={(e) => setViewingDate(e.target.value)}
-                        style={{ width: "100%", padding: "8px", border: "1px solid #dce5eb", borderRadius: "6px", marginTop: "4px" }}
-                      />
-                    </label>
-                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#12385e" }}>
-                      Preferred Time
-                      <select
-                        value={viewingTime}
-                        onChange={(e) => setViewingTime(e.target.value)}
-                        style={{ width: "100%", padding: "8px", border: "1px solid #dce5eb", borderRadius: "6px", marginTop: "4px" }}
-                      >
-                        <option>09:00 AM</option>
-                        <option>10:00 AM</option>
-                        <option>02:00 PM</option>
-                        <option>04:00 PM</option>
-                        <option>05:30 PM</option>
-                      </select>
-                    </label>
-                  </div>
-                )}
-                <textarea
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  placeholder={
-                    report
-                      ? "Add a brief description of the issue (optional)"
-                      : viewing
-                      ? "Add a note for the landlord (e.g. Saturday morning works best)"
-                      : "Hi, I’m interested in this apartment. Is it still available?"
-                  }
-                />
-                <Btn onClick={handleModalSubmit}>
-                  {report
-                    ? "Submit report"
-                    : viewing
-                    ? "Request viewing"
-                    : "Send message & open chat"}
-                </Btn>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </main>
   );
 }

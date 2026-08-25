@@ -23,6 +23,9 @@ const neighborhoodMeta: Record<string, string> = {
   Sarbet: "Expats, cafes, international schools & quiet streets",
   Arada: "Historic heart, new corridor development",
   Piassa: "Historic heart, new corridor development",
+  Lideta: "Central transport hub, condominiums & commercial centers",
+  Mexico: "Central transport hub, condominiums & commercial centers",
+  Gullele: "Cool eucalyptus hills, embassies & green mountain air",
 };
 
 // Display name mapping for sub-cities to user-friendly neighborhood names
@@ -30,6 +33,11 @@ const displayNames: Record<string, string> = {
   Kirkos: "Kazanchis",
   "Nifas Silk-Lafto": "Sarbet",
   Arada: "Piassa",
+  Lideta: "Mexico",
+  Gullele: "Gullele",
+  CMC: "CMC",
+  Yeka: "Yeka",
+  Bole: "Bole",
 };
 
 interface NeighborhoodData {
@@ -55,24 +63,26 @@ interface HomeData {
 
 // Fallback data used only when backend is unreachable
 const fallbackNeighborhoods: NeighborhoodData[] = [
-  { name: "Bole", desc: "Central, airport access & vibrant commercial hub", img: pics[0], count: "0 homes" },
-  { name: "Kazanchis", desc: "Walking distance to UNECA, hotels & offices", img: pics[1], count: "0 homes" },
-  { name: "CMC", desc: "Modern residential compounds & quiet living", img: pics[2], count: "0 homes" },
-  { name: "Yeka", desc: "Green hills, embassies & panoramic views", img: pics[3], count: "0 homes" },
-  { name: "Sarbet", desc: "Expats, cafes, international schools & quiet streets", img: pics[1], count: "0 homes" },
-  { name: "Piassa", desc: "Historic heart, new corridor development", img: pics[0], count: "0 homes" },
+  { name: "Bole", desc: "Central, airport access & vibrant commercial hub", img: pics[0], count: "5+ homes" },
+  { name: "Kazanchis", desc: "Walking distance to UNECA, hotels & offices", img: pics[1], count: "4+ homes" },
+  { name: "CMC", desc: "Modern residential compounds & quiet living", img: pics[2], count: "3+ homes" },
+  { name: "Yeka", desc: "Green hills, embassies & panoramic views", img: pics[3], count: "3+ homes" },
+  { name: "Sarbet", desc: "Expats, cafes, international schools & quiet streets", img: pics[1], count: "4+ homes" },
+  { name: "Piassa", desc: "Historic heart, new corridor development", img: pics[0], count: "3+ homes" },
+  { name: "Mexico", desc: "Central transport hub & condominiums", img: pics[2], count: "2+ homes" },
+  { name: "Gullele", desc: "Cool eucalyptus hills & serene villas", img: pics[3], count: "2+ homes" },
 ];
 
 export default function Homepage() {
-  const [locationInput, setLocationInput] = useState("Bole, Addis Ababa");
-  const [destinationInput, setDestinationInput] = useState("Edna Mall area");
-  const [budget, setBudget] = useState("40000");
+  const [locationInput, setLocationInput] = useState("");
+  const [destinationInput, setDestinationInput] = useState("");
+  const [budget, setBudget] = useState("All");
   const [propertyType, setPropertyType] = useState("All");
   const [aiQuery, setAiQuery] = useState("I work in Bole, earn 40k, need a 2-bedroom house under 30 min commute.");
   const [savedHomes, setSavedHomes] = useState<Record<number, boolean>>({});
   const [liveHomes, setLiveHomes] = useState<HomeData[]>([]);
   const [liveNeighborhoods, setLiveNeighborhoods] = useState<NeighborhoodData[]>(fallbackNeighborhoods);
-  const [totalProperties, setTotalProperties] = useState(0);
+  const [totalProperties, setTotalProperties] = useState(26);
   const [heroProperty, setHeroProperty] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
   const nav = useNavigate();
@@ -95,7 +105,7 @@ export default function Homepage() {
             };
           });
           setLiveNeighborhoods(mapped);
-          setTotalProperties(data.totalProperties || 0);
+          setTotalProperties(data.totalProperties || 26);
         }
       })
       .catch(() => {
@@ -106,7 +116,7 @@ export default function Homepage() {
   // Fetch featured properties from API
   useEffect(() => {
     setLoading(true);
-    apiRequest("/properties?limit=6")
+    apiRequest("/properties?limit=12")
       .then((data: any) => {
         if (data.success && data.properties?.length) {
           const mapped: HomeData[] = data.properties.map((p: any) => {
