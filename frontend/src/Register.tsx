@@ -1,8 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
+
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "642526920712-7di88noo4nn5pmjr9599la28cg50qjgd.apps.googleusercontent.com";
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
 
 export default function Register() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -15,8 +25,65 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
   const { register, googleLogin } = useAuth();
   const nav = useNavigate();
+
+  // Initialize Google Identity Services
+  useEffect(() => {
+    const initGoogleGIS = () => {
+      if (window.google?.accounts?.id && googleBtnRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredentialResponse,
+        });
+
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+          text: "signup_with",
+          shape: "rectangular",
+          logo_alignment: "center",
+        });
+      }
+    };
+
+    if (window.google?.accounts?.id) {
+      initGoogleGIS();
+    } else {
+      const timer = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          initGoogleGIS();
+          clearInterval(timer);
+        }
+      }, 300);
+      return () => clearInterval(timer);
+    }
+  }, [role]);
+
+  const handleGoogleCredentialResponse = async (response: any) => {
+    if (!response.credential) return;
+    setError("");
+    setLoading(true);
+
+    try {
+      const loggedUser = await googleLogin({
+        credential: response.credential,
+        role,
+      });
+
+      if (loggedUser.role === "landlord") {
+        nav("/landlord");
+      } else {
+        nav("/tenant");
+      }
+    } catch (err: any) {
+      setError(err.message || "Google sign-up failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,27 +99,6 @@ export default function Register() {
       }
     } catch (err: any) {
       setError(err.message || "Registration failed. Please check your information.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const googleEmail = prompt("Enter your Google Account email to create account:") || "";
-      if (googleEmail) {
-        const user = await googleLogin({
-          email: googleEmail,
-          name: googleEmail.split("@")[0],
-          role,
-        });
-        if (user.role === "landlord") nav("/landlord");
-        else nav("/tenant");
-      }
-    } catch (err: any) {
-      setError(err.message || "Google sign-up failed.");
     } finally {
       setLoading(false);
     }
@@ -242,29 +288,11 @@ export default function Register() {
             <span style={{ background: "#ffffff", padding: "0 12px", color: "#8a9fb0", fontSize: "12px" }}>or sign up with</span>
           </div>
 
-          <button
-            className="google"
-            type="button"
-            onClick={handleGoogleSignUp}
-            style={{
-              width: "100%",
-              padding: "11px",
-              border: "1px solid #cbd9e1",
-              borderRadius: "8px",
-              background: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              fontSize: "13px",
-              fontWeight: 700,
-              color: "#173858",
-              cursor: "pointer",
-            }}
-          >
-            <Icon name="google" style={{ fontSize: "16px", color: "#ea4335" }} />
-            <span>Sign Up with Google</span>
-          </button>
+          {/* Official Google Sign-Up Button Container */}
+          <div
+            ref={googleBtnRef}
+            style={{ width: "100%", minHeight: "44px", display: "flex", justifyContent: "center" }}
+          />
 
           <p className="login-bottom" style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#5f758a" }}>
             Already have an account? <Link to="/login" style={{ color: "#0b8879", fontWeight: 700, textDecoration: "none" }}>Sign In</Link>

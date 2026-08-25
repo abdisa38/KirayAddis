@@ -1,8 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
+
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "642526920712-7di88noo4nn5pmjr9599la28cg50qjgd.apps.googleusercontent.com";
 
 declare global {
   interface Window {
@@ -16,8 +20,66 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [contact, setContact] = useState("");
   const [password, setPassword] = useState("");
+  const googleBtnRef = useRef<HTMLDivElement>(null);
   const { login, googleLogin } = useAuth();
   const nav = useNavigate();
+
+  // Initialize Google Identity Services
+  useEffect(() => {
+    const initGoogleGIS = () => {
+      if (window.google?.accounts?.id && googleBtnRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredentialResponse,
+        });
+
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+          text: "continue_with",
+          shape: "rectangular",
+          logo_alignment: "center",
+        });
+      }
+    };
+
+    if (window.google?.accounts?.id) {
+      initGoogleGIS();
+    } else {
+      const timer = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          initGoogleGIS();
+          clearInterval(timer);
+        }
+      }, 300);
+      return () => clearInterval(timer);
+    }
+  }, []);
+
+  const handleGoogleCredentialResponse = async (response: any) => {
+    if (!response.credential) return;
+    setError("");
+    setLoading(true);
+
+    try {
+      const loggedUser = await googleLogin({
+        credential: response.credential,
+      });
+
+      if (loggedUser.role === "landlord") {
+        nav("/landlord");
+      } else if (loggedUser.role === "admin") {
+        nav("/admin");
+      } else {
+        nav("/tenant");
+      }
+    } catch (err: any) {
+      setError(err.message || "Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,39 +97,6 @@ export default function Login() {
       }
     } catch (err: any) {
       setError(err.message || "Invalid email address or password.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      // If Google Identity GIS is loaded
-      if (window.google?.accounts?.id) {
-        window.google.accounts.id.prompt(async (notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Fallback prompt
-            const email = prompt("Enter your Google Account email to continue:") || "";
-            if (email) {
-              const user = await googleLogin({ email, name: email.split("@")[0] });
-              if (user.role === "landlord") nav("/landlord");
-              else nav("/tenant");
-            }
-          }
-        });
-      } else {
-        // Direct Google OAuth prompt
-        const email = prompt("Enter your Google Account email:") || "";
-        if (email) {
-          const user = await googleLogin({ email, name: email.split("@")[0] });
-          if (user.role === "landlord") nav("/landlord");
-          else nav("/tenant");
-        }
-      }
-    } catch (err: any) {
-      setError(err.message || "Google authentication failed.");
     } finally {
       setLoading(false);
     }
@@ -174,32 +203,14 @@ export default function Login() {
           </button>
 
           <div className="auth-divider" style={{ margin: "20px 0", textAlign: "center" }}>
-            <span style={{ background: "#ffffff", padding: "0 12px", color: "#8a9fb0", fontSize: "12px" }}>or continue with</span>
+            <span style={{ background: "#ffffff", padding: "0 12px", color: "#8a9fb0", fontSize: "12px" }}>or sign in with</span>
           </div>
 
-          <button
-            className="google"
-            type="button"
-            onClick={handleGoogleSignIn}
-            style={{
-              width: "100%",
-              padding: "11px",
-              border: "1px solid #cbd9e1",
-              borderRadius: "8px",
-              background: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              fontSize: "13px",
-              fontWeight: 700,
-              color: "#173858",
-              cursor: "pointer",
-            }}
-          >
-            <Icon name="google" style={{ fontSize: "16px", color: "#ea4335" }} />
-            <span>Continue with Google</span>
-          </button>
+          {/* Official Google Sign-In Button Container */}
+          <div
+            ref={googleBtnRef}
+            style={{ width: "100%", minHeight: "44px", display: "flex", justifyContent: "center" }}
+          />
 
           <p className="login-bottom" style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#5f758a" }}>
             Don't have an account? <Link to="/register" style={{ color: "#0b8879", fontWeight: 700, textDecoration: "none" }}>Create an account</Link>
