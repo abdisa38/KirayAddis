@@ -25,6 +25,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<UserProfile>;
   register: (name: string, email: string, password: string, role: string, phone?: string) => Promise<UserProfile>;
+  googleLogin: (payload: { credential?: string; email?: string; name?: string; role?: string }) => Promise<UserProfile>;
   logout: () => void;
   updateUser: (updated: Partial<UserProfile>) => void;
 }
@@ -139,6 +140,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     throw new Error(data.message || "Registration failed");
   };
 
+  const googleLogin = async (payload: { credential?: string; email?: string; name?: string; role?: string }): Promise<UserProfile> => {
+    const data = await apiRequest("/auth/google", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    if (data.success && data.token) {
+      setToken(data.token);
+      localStorage.setItem("addis_kiray_token", data.token);
+
+      const profile: UserProfile = {
+        id: data.user.id || data.user._id,
+        name: data.user.name,
+        email: data.user.email,
+        phone: data.user.phone,
+        role: data.user.role,
+        avatar: data.user.avatar,
+        isEmailVerified: data.user.isEmailVerified,
+        verificationTier: data.user.verificationTier,
+        preferences: data.user.preferences,
+        savedProperties: data.user.savedProperties,
+      };
+
+      setUser(profile);
+      localStorage.setItem("addis_kiray_user", JSON.stringify(profile));
+      return profile;
+    }
+    throw new Error(data.message || "Google sign in failed");
+  };
+
+
 
   const logout = () => {
     setToken(null);
@@ -162,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         register,
+        googleLogin,
         logout,
         updateUser,
       }}
