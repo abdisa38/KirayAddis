@@ -882,8 +882,8 @@ export default function Homepage() {
             <Link to="/search" className="btn" style={{ textDecoration: "none", padding: "12px 24px", fontSize: "11px" }}>
               Find My Home <Icon name="search" />
             </Link>
-            <Link to="/prototype" className="btn outline" style={{ textDecoration: "none", padding: "12px 24px", fontSize: "11px" }}>
-              Explore Interactive Prototype (23 Screens) →
+            <Link to="/register?role=landlord" className="btn outline" style={{ textDecoration: "none", padding: "12px 24px", fontSize: "11px" }}>
+              List Your Property as Landlord →
             </Link>
           </div>
         </div>
