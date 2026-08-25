@@ -1,65 +1,47 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import Navbar from "./components/Navbar";
 import Icon from "./components/Icon";
+import { apiRequest } from "./api/client";
 
-const pics = [
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
-];
-
-const fallbackHomes = [
-  {
-    id: "sunlit-2bed",
-    name: "Sunlit two-bedroom apartment",
-    loc: "Bole, Addis Ababa",
-    price: "42,000",
-    match: "94",
-    commute: "24 min to Edna Mall",
-    tag: "Best match",
-  },
-  {
-    id: "modern-atlas",
-    name: "Modern apartment near Atlas",
-    loc: "Bole Atlas, Addis Ababa",
-    price: "36,000",
-    match: "91",
-    commute: "18 min to Edna Mall",
-  },
-  {
-    id: "quiet-compound",
-    name: "Quiet home in a secure compound",
-    loc: "Bole Medhanealem",
-    price: "39,500",
-    match: "88",
-    commute: "27 min to Edna Mall",
-  },
-  {
-    id: "bright-balcony",
-    name: "Bright two-bedroom with balcony",
-    loc: "Kazanchis, Addis Ababa",
-    price: "34,000",
-    match: "84",
-    commute: "31 min to Edna Mall",
-  },
-];
+interface PropertyItem {
+  id: string;
+  name: string;
+  loc: string;
+  price: string;
+  rawPrice: number;
+  match: string;
+  commute: string;
+  beds: number;
+  baths: number;
+  area: string;
+  propertyType: string;
+  tag?: string;
+  img: string;
+}
 
 function Card({
   h,
-  index,
   selected,
   onSelect,
   onOpen,
 }: {
-  h: (typeof fallbackHomes)[0];
-  index: number;
+  h: PropertyItem;
   selected: boolean;
   onSelect: () => void;
   onOpen: () => void;
 }) {
   const [saved, setSaved] = useState(false);
+
+  const toggleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await apiRequest(`/tenant/saved/${h.id}`, { method: "POST" });
+      setSaved(!saved);
+    } catch {
+      setSaved(!saved);
+    }
+  };
 
   return (
     <article
@@ -69,20 +51,17 @@ function Card({
       style={{ cursor: "pointer" }}
     >
       <div className="photo">
-        <img src={pics[index % 4]} alt={h.name} />
-        {index < 3 && (
+        <img src={h.img} alt={h.name} />
+        {h.tag && (
           <span className="verified">
-            <Icon name="check" /> Verified property
+            <Icon name="check" /> {h.tag}
           </span>
         )}
-        {h.tag && <span className="best">{h.tag}</span>}
         <button
           className={saved ? "save saved" : "save"}
-          onClick={(e) => {
-            e.stopPropagation();
-            setSaved(!saved);
-          }}
+          onClick={toggleSave}
           aria-label="Save home"
+          type="button"
         >
           <Icon name="heart" />
         </button>
@@ -103,16 +82,17 @@ function Card({
           </span>
         </div>
         <div className="meta">
-          <span>2 beds</span>
-          <span>1 bath</span>
-          <span>92 m²</span>
+          <span>{h.beds} beds</span>
+          <span>{h.baths} bath{h.baths > 1 ? "s" : ""}</span>
+          <span>{h.area}</span>
+          <span>{h.propertyType}</span>
         </div>
         <div className="card-bottom">
           <b>
             ETB {h.price} <em>/ month</em>
           </b>
           <span className="commute">
-            <Icon name="map" />
+            <Icon name="car" />
             {h.commute}
           </span>
         </div>
@@ -126,20 +106,22 @@ function FilterDrawer({
   onApply,
   selectedType,
   setSelectedType,
+  maxBudget,
+  setMaxBudget,
+  selectedBeds,
+  setSelectedBeds,
 }: {
   close: () => void;
   onApply: () => void;
   selectedType: string;
   setSelectedType: (t: string) => void;
+  maxBudget: number;
+  setMaxBudget: (n: number) => void;
+  selectedBeds: string;
+  setSelectedBeds: (b: string) => void;
 }) {
-  const opts = [
-    "Apartment",
-    "House",
-    "Studio",
-    "Condominium",
-    "Villa",
-    "Shared",
-  ];
+  const propertyTypes = ["All", "Apartment", "House", "Studio", "Condominium", "Villa"];
+  const bedOptions = ["All", "1+", "2+", "3+", "4+"];
 
   return (
     <aside className="drawer">
@@ -153,25 +135,25 @@ function FilterDrawer({
         </button>
       </div>
       <section>
-        <b>Price (ETB)</b>
+        <b>Max Price: ETB {maxBudget.toLocaleString()} / mo</b>
+        <input
+          type="range"
+          min="10000"
+          max="120000"
+          step="5000"
+          value={maxBudget}
+          onChange={(e) => setMaxBudget(Number(e.target.value))}
+          style={{ width: "100%", accentColor: "#0b8879", margin: "12px 0 6px" }}
+        />
         <div className="price-inputs">
-          <span>
-            Min <strong>0</strong>
-          </span>
-          <span>
-            Max <strong>40,000</strong>
-          </span>
-        </div>
-        <div className="range">
-          <i />
-          <b />
-          <b />
+          <span>Min <strong>10,000</strong></span>
+          <span>Max <strong>{maxBudget.toLocaleString()}</strong></span>
         </div>
       </section>
       <section>
         <b>Property type</b>
         <div className="option-grid">
-          {opts.map((x) => (
+          {propertyTypes.map((x) => (
             <button
               key={x}
               type="button"
@@ -186,41 +168,40 @@ function FilterDrawer({
       <section>
         <b>Bedrooms</b>
         <div className="option-grid short">
-          {["Studio", "1+", "2+", "3+", "4+", "5+"].map((x) => (
-            <button className={x === "2+" ? "on" : ""} key={x} type="button">
+          {bedOptions.map((x) => (
+            <button
+              key={x}
+              type="button"
+              onClick={() => setSelectedBeds(x)}
+              className={selectedBeds === x ? "on" : ""}
+            >
               {x}
             </button>
           ))}
         </div>
       </section>
       <section>
-        <b>Verification & Freshness</b>
+        <b>Verification & Utilities</b>
         <label>
           <input type="checkbox" defaultChecked /> Verified property
         </label>
         <label>
-          <input type="checkbox" defaultChecked /> Verified landlord
+          <input type="checkbox" defaultChecked /> Water tank backup
         </label>
         <label>
-          <input type="checkbox" defaultChecked /> Confirmed available recently
+          <input type="checkbox" defaultChecked /> Generator backup
         </label>
       </section>
-      <section>
-        <b>Destination & Commute</b>
-        <button className="field" type="button">
-          Bole — Edna Mall area <span>⌄</span>
-        </button>
-        <div className="option-grid short">
-          {["15 min", "30 min", "45 min", "60 min"].map((x) => (
-            <button className={x === "30 min" ? "on" : ""} key={x} type="button">
-              {x}
-            </button>
-          ))}
-        </div>
-      </section>
       <div className="drawer-foot">
-        <button onClick={close} type="button">
-          Clear
+        <button
+          onClick={() => {
+            setSelectedType("All");
+            setMaxBudget(120000);
+            setSelectedBeds("All");
+          }}
+          type="button"
+        >
+          Reset
         </button>
         <button onClick={onApply} type="button">
           Apply Filters
@@ -230,138 +211,96 @@ function FilterDrawer({
   );
 }
 
-function Map({
-  selected,
-  setSelected,
-  onOpenDetails,
-  currentHomes,
-}: {
-  selected: number;
-  setSelected: (n: number) => void;
-  onOpenDetails: () => void;
-  currentHomes: typeof fallbackHomes;
-}) {
-  const current = currentHomes[selected] || currentHomes[0] || fallbackHomes[0];
-
-  return (
-    <aside className="map">
-      <div className="map-roads" />
-      <div className="commute-line" />
-      <span className="area a1">Piassa</span>
-      <span className="area a2">Kazanchis</span>
-      <span className="area a3">Bole</span>
-      <span className="area a4">CMC</span>
-      <button className="marker one" onClick={() => setSelected(1)}>
-        ETB 36k
-      </button>
-      <button className="marker two" onClick={() => setSelected(2)}>
-        ETB 39.5k
-      </button>
-      <button className="marker three" onClick={() => setSelected(3)}>
-        ETB 34k
-      </button>
-      <button
-        className="marker main"
-        onClick={() => setSelected(0)}
-        aria-label="Selected property: Sunlit two-bedroom, 42,000 ETB"
-      >
-        <Icon name="map" /> ETB 42k
-      </button>
-      <div className="map-controls">
-        <button aria-label="Zoom in">+</button>
-        <button aria-label="Zoom out">−</button>
-        <button aria-label="Use my location">
-          <Icon name="pin" />
-        </button>
-      </div>
-      <div className="map-legend">
-        <span>
-          <i /> Selected home
-        </span>
-        <span>
-          <b /> 30 min commute
-        </span>
-      </div>
-      <div className="map-preview">
-        <img src={pics[selected % 4]} alt="Selected property" />
-        <div>
-          <span className="verified">
-            <Icon name="check" /> Verified
-          </span>
-          <h3>{current.name}</h3>
-          <p>{current.loc}</p>
-          <b>
-            ETB {current.price} <em>/ month</em>
-          </b>
-        </div>
-        <button type="button" onClick={onOpenDetails}>
-          View property <Icon name="arrow" />
-        </button>
-      </div>
-    </aside>
-  );
-}
-
 export default function SearchResults() {
-  const [searchParams] = useSearchParams();
-  const initialLoc = searchParams.get("location") || "Bole, Addis Ababa";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialLoc = searchParams.get("location") || "All";
+  const initialMaxPrice = searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : 120000;
+  const initialType = searchParams.get("propertyType") || "All";
 
   const [drawer, setDrawer] = useState(false);
   const [selected, setSelected] = useState(0);
-  const [mode, setMode] = useState<"default" | "empty" | "loading" | "error">("default");
-  const [ai, setAi] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [locationQuery, setLocationQuery] = useState(initialLoc);
-  const [propertyType, setPropertyType] = useState("Apartment");
-  const [homesList, setHomesList] = useState(fallbackHomes);
+  const [loading, setLoading] = useState(true);
+  const [locationQuery, setLocationQuery] = useState(initialLoc === "All" ? "" : initialLoc);
+  const [destinationQuery, setDestinationQuery] = useState(searchParams.get("destination") || "");
+  const [propertyType, setPropertyType] = useState(initialType);
+  const [maxBudget, setMaxBudget] = useState(initialMaxPrice);
+  const [selectedBeds, setSelectedBeds] = useState("All");
+  const [homesList, setHomesList] = useState<PropertyItem[]>([]);
   const nav = useNavigate();
 
-  useEffect(() => {
-    setMode("loading");
-    const subCity = locationQuery.split(",")[0].trim();
-    const queryUrl = `http://localhost:5000/api/properties?subCity=${encodeURIComponent(
-      subCity === "All" ? "" : subCity
-    )}`;
+  const fetchFilteredProperties = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (locationQuery && locationQuery !== "All") {
+        params.set("subCity", locationQuery.split(",")[0].trim());
+      }
+      if (propertyType && propertyType !== "All") {
+        params.set("propertyType", propertyType);
+      }
+      if (maxBudget && maxBudget < 120000) {
+        params.set("maxPrice", maxBudget.toString());
+      }
+      if (selectedBeds && selectedBeds !== "All") {
+        params.set("bedrooms", selectedBeds.replace("+", ""));
+      }
 
-    fetch(queryUrl)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.properties?.length) {
-          const mapped = data.properties.map((p: any) => ({
+      const data = await apiRequest(`/properties?${params.toString()}`);
+      if (data.success && data.properties) {
+        const mapped: PropertyItem[] = data.properties.map((p: any) => {
+          const cover = p.media?.find((m: any) => m.isCover) || p.media?.[0];
+          return {
             id: p._id,
             name: p.title,
             loc: `${p.location?.neighborhood || p.location?.subCity}, Addis Ababa`,
             price: Number(p.price).toLocaleString(),
+            rawPrice: p.price,
             match: `${p.matchScore || 92}`,
-            commute: p.location?.landmark || "20-25 min commute",
+            commute: p.location?.landmark || "20 min to center",
+            beds: p.bedrooms,
+            baths: p.bathrooms,
+            area: `${p.area} m²`,
+            propertyType: p.propertyType,
             tag: p.verification?.status === "Approved" ? "Verified" : undefined,
-          }));
-          setHomesList(mapped);
-          setMode("default");
-        } else {
-          setHomesList(fallbackHomes);
-          setMode("default");
-        }
-      })
-      .catch(() => {
-        setHomesList(fallbackHomes);
-        setMode("default");
-      });
-  }, [locationQuery, propertyType]);
-
-  const visible = useMemo(() => (mode === "default" ? homesList : []), [mode, homesList]);
-
-  const openSelectedProperty = () => {
-    const current = homesList[selected] || fallbackHomes[0];
-    nav(`/property/${current.id}`);
+            img: cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
+          };
+        });
+        setHomesList(mapped);
+      } else {
+        setHomesList([]);
+      }
+    } catch {
+      setHomesList([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchFilteredProperties();
+  }, [locationQuery, propertyType, maxBudget, selectedBeds]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchFilteredProperties();
+  };
+
+  const openSelectedProperty = (id?: string) => {
+    const targetId = id || homesList[selected]?.id || (homesList[0] ? homesList[0].id : "");
+    if (targetId) {
+      nav(`/property/${targetId}`);
+    }
+  };
+
+  const currentSelected = homesList[selected] || homesList[0];
+
   return (
-    <main>
+    <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f8faf9" }}>
       <Navbar />
 
+      {/* Structured Search Bar */}
       <section className="search-head">
-        <div className="search-row">
+        <form onSubmit={handleSearchSubmit} className="search-row">
           <div className="search-input">
             <Icon name="search" />
             <div>
@@ -369,210 +308,194 @@ export default function SearchResults() {
               <input
                 value={locationQuery}
                 onChange={(e) => setLocationQuery(e.target.value)}
-                style={{ border: "none", outline: "none", color: "#254867", fontSize: "12px", background: "transparent" }}
+                placeholder="Bole, Kazanchis, CMC, Yeka, Sarbet..."
+                style={{ border: "none", outline: "none", color: "#254867", fontSize: "12px", background: "transparent", width: "100%" }}
               />
             </div>
           </div>
           <div className="search-input destination">
             <Icon name="pin" />
             <div>
-              <b>Destination</b>
-              <span>Bole — Edna Mall area</span>
+              <b>Workplace / Destination</b>
+              <input
+                value={destinationQuery}
+                onChange={(e) => setDestinationQuery(e.target.value)}
+                placeholder="e.g. Edna Mall, UNECA..."
+                style={{ border: "none", outline: "none", color: "#254867", fontSize: "12px", background: "transparent", width: "100%" }}
+              />
             </div>
           </div>
-          <button className="commute" type="button">
-            30 min <b>⌄</b>
-          </button>
-          <button className="go" type="button" onClick={() => setMode("loading")}>
+          <button className="go" type="submit">
             <Icon name="search" /> Search
           </button>
-        </div>
+        </form>
+
         <div className="suggestions">
           <span>Suggestions:</span>
-          {["Bole", "Bole Atlas", "Bole Medhanealem", "Kazanchis", "Yeka", "CMC"].map((s) => (
-            <button key={s} type="button" onClick={() => setLocationQuery(s)}>
+          {["All", "Bole", "Kazanchis", "CMC", "Yeka", "Sarbet", "Piassa", "Mexico", "Gullele"].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setLocationQuery(s === "All" ? "" : s)}
+              style={{
+                background: locationQuery === s || (s === "All" && !locationQuery) ? "#0d345b" : "#f0f5f7",
+                color: locationQuery === s || (s === "All" && !locationQuery) ? "#ffffff" : "#254867",
+              }}
+            >
               {s}
             </button>
           ))}
-          <button className="locate" type="button">
-            <Icon name="pin" /> Use my location
+          <button className="locate" type="button" onClick={() => setLocationQuery("Bole")}>
+            <Icon name="pin" /> Use Bole
           </button>
         </div>
       </section>
 
+      {/* Filter Bar */}
       <section className="filters">
         <div className="filter-scroll">
-          <button className="filter active" type="button">
-            Up to 40,000 ETB <b>⌄</b>
+          <button className="filter active" type="button" onClick={() => setDrawer(true)}>
+            Budget: ≤ {maxBudget.toLocaleString()} ETB <b>⌄</b>
           </button>
           <button className="filter active" type="button" onClick={() => setDrawer(true)}>
-            {propertyType} <b>⌄</b>
+            Type: {propertyType} <b>⌄</b>
           </button>
-          <button className="filter active" type="button">
-            2+ bedrooms <b>⌄</b>
-          </button>
-          <button className="filter" type="button">
-            Bathrooms <b>⌄</b>
+          <button className="filter active" type="button" onClick={() => setDrawer(true)}>
+            Beds: {selectedBeds} <b>⌄</b>
           </button>
           <button className="filter" type="button" onClick={() => setDrawer(true)}>
-            <Icon name="sliders" /> More filters
+            <Icon name="sliders" /> All Filters
           </button>
-          <button className="clear" type="button" onClick={() => setMode("default")}>
+          <button
+            className="clear"
+            type="button"
+            onClick={() => {
+              setLocationQuery("");
+              setPropertyType("All");
+              setMaxBudget(120000);
+              setSelectedBeds("All");
+            }}
+          >
             Clear filters
           </button>
         </div>
-        <button className="ask-ai" type="button" onClick={() => setAi(!ai)}>
-          <Icon name="spark" /> Ask Addis AI
+        <button className="ask-ai" type="button" onClick={() => nav("/ai")}>
+          <Icon name="sparkles" /> Ask Addis AI
         </button>
       </section>
 
-      {ai && (
-        <section className="ai-bar">
-          <Icon name="spark" />
-          <p>“Find a quiet 2-bedroom near Bole under 35,000 ETB.”</p>
-          <span>
-            <b>AI understood</b> · Bole · ≤35,000 ETB · 2+ beds · Quiet
-          </span>
-          <button type="button" onClick={() => nav("/ai")}>
-            Open in Addis AI <Icon name="arrow" />
-          </button>
-        </section>
-      )}
-
-      <section className="workspace">
+      {/* Main Content Workspace */}
+      <section className="workspace" style={{ flex: 1 }}>
         <div className="results">
           <div className="result-head">
             <div>
               <p className="crumb">
-                <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>HOME</Link> / SEARCH / {locationQuery.toUpperCase()}
+                <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>HOME</Link> / SEARCH / {locationQuery ? locationQuery.toUpperCase() : "ALL ADDIS ABABA"}
               </p>
-              <h1>Homes in {locationQuery}</h1>
+              <h1>
+                {loading ? "Searching properties..." : `${homesList.length} Homes Found in ${locationQuery || "Addis Ababa"}`}
+              </h1>
               <span>
-                {homesList.length} verified homes match your search <i>•</i> Live Atlas Database
+                {propertyType !== "All" ? `${propertyType} listings` : "All property types"} · Direct landlord connections
               </span>
             </div>
-            <div className="head-actions">
-              <button
-                type="button"
-                onClick={() => setSaved(!saved)}
-                className={saved ? "saved-search on" : "saved-search"}
+            <div className="sort">
+              <label>Sort by:</label>
+              <select
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const sorted = [...homesList];
+                  if (val === "price_asc") sorted.sort((a, b) => a.rawPrice - b.rawPrice);
+                  if (val === "price_desc") sorted.sort((a, b) => b.rawPrice - a.rawPrice);
+                  if (val === "match") sorted.sort((a, b) => Number(b.match) - Number(a.match));
+                  setHomesList(sorted);
+                }}
               >
-                {saved ? "✓ Saved search" : "Save search"}
-              </button>
-              <select aria-label="Sort results" defaultValue="Recommended">
-                <option>Recommended</option>
-                <option>Newest first</option>
-                <option>Lowest price</option>
-                <option>Highest match score</option>
+                <option value="match">Addis Match Score</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
               </select>
-              <button
-                className="state-trigger"
-                type="button"
-                onClick={() => setMode(mode === "default" ? "empty" : "default")}
-              >
-                States
-              </button>
             </div>
           </div>
 
-          {mode === "default" && (
-            <div className="chips">
-              {[locationQuery, "≤40,000 ETB", "2+ beds", propertyType].map((c) => (
-                <button key={c} type="button">
-                  {c} ×
-                </button>
-              ))}
-              <button type="button" onClick={() => setMode("default")}>
-                Clear all
-              </button>
+          {/* Property Cards List */}
+          {loading ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#647d91" }}>
+              <p>Loading active properties from MongoDB Atlas...</p>
             </div>
-          )}
-
-          {mode === "loading" && (
-            <div className="skeletons">
-              {[1, 2, 3].map((x) => (
-                <div className="skeleton" key={x} />
-              ))}
-            </div>
-          )}
-
-          {mode === "empty" && (
-            <div className="state">
-              <Icon name="search" />
-              <h2>No homes match your current filters.</h2>
-              <p>
-                Try increasing your budget, expanding the search area, or reducing
-                bedroom requirements.
+          ) : homesList.length === 0 ? (
+            <div style={{ background: "#ffffff", padding: "48px", borderRadius: "12px", textAlign: "center", border: "1px solid #e1e9ed" }}>
+              <h3>No properties matched your exact filter criteria</h3>
+              <p style={{ color: "#6a8194", fontSize: "12px", margin: "8px 0 16px" }}>
+                Try adjusting your budget or selecting "All Property Types" to see more homes in Addis Ababa.
               </p>
-              <button type="button" onClick={() => setDrawer(true)}>
-                Adjust filters
-              </button>
-              <button type="button" onClick={() => setMode("default")}>
-                Explore nearby areas
-              </button>
-            </div>
-          )}
-
-          {mode === "error" && (
-            <div className="state">
-              <Icon name="close" />
-              <h2>We couldn’t load these homes.</h2>
-              <p>Check your connection and try again.</p>
-              <button type="button" onClick={() => setMode("default")}>
-                Try again
+              <button
+                onClick={() => {
+                  setLocationQuery("");
+                  setPropertyType("All");
+                  setMaxBudget(120000);
+                }}
+                className="btn"
+              >
+                View All Available Properties
               </button>
             </div>
-          )}
-
-          {mode === "default" && (
-            <div className="cards">
-              {visible.map((h, i) => (
+          ) : (
+            <div className="list">
+              {homesList.map((h, i) => (
                 <Card
-                  key={h.name + i}
+                  key={h.id}
                   h={h}
-                  index={i}
                   selected={selected === i}
                   onSelect={() => setSelected(i)}
-                  onOpen={() => nav(`/property/${h.id}`)}
+                  onOpen={() => openSelectedProperty(h.id)}
                 />
               ))}
             </div>
           )}
-
-          <div className="state-pills">
-            <button type="button" onClick={() => setMode("default")}>
-              Default
-            </button>
-            <button type="button" onClick={() => setMode("loading")}>
-              Loading
-            </button>
-            <button type="button" onClick={() => setMode("empty")}>
-              No results
-            </button>
-            <button type="button" onClick={() => setMode("error")}>
-              Error
-            </button>
-          </div>
         </div>
 
-        <Map
-          selected={selected}
-          setSelected={setSelected}
-          onOpenDetails={openSelectedProperty}
-          currentHomes={homesList}
-        />
+        {/* Map Column */}
+        {currentSelected && (
+          <aside className="map">
+            <div className="map-roads" />
+            <div className="commute-line" />
+            <span className="area a1">Piassa</span>
+            <span className="area a2">Kazanchis</span>
+            <span className="area a3">Bole</span>
+            <span className="area a4">CMC</span>
+
+            <div className="map-preview">
+              <img src={currentSelected.img} alt={currentSelected.name} />
+              <div>
+                <span className="verified">
+                  <Icon name="check" /> {currentSelected.tag || "Verified Listing"}
+                </span>
+                <h3>{currentSelected.name}</h3>
+                <p>{currentSelected.loc}</p>
+                <b>
+                  ETB {currentSelected.price} <em>/ month</em>
+                </b>
+              </div>
+              <button type="button" onClick={() => openSelectedProperty(currentSelected.id)}>
+                View Property <Icon name="arrow" />
+              </button>
+            </div>
+          </aside>
+        )}
       </section>
 
       {drawer && (
-        <>
-          <div className="scrim" onClick={() => setDrawer(false)} />
-          <FilterDrawer
-            close={() => setDrawer(false)}
-            onApply={() => setDrawer(false)}
-            selectedType={propertyType}
-            setSelectedType={setPropertyType}
-          />
-        </>
+        <FilterDrawer
+          close={() => setDrawer(false)}
+          onApply={() => setDrawer(false)}
+          selectedType={propertyType}
+          setSelectedType={setPropertyType}
+          maxBudget={maxBudget}
+          setMaxBudget={setMaxBudget}
+          selectedBeds={selectedBeds}
+          setSelectedBeds={setSelectedBeds}
+        />
       )}
     </main>
   );

@@ -1,16 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
 export default function Login() {
   const [pw, setPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [contact, setContact] = useState("alem@example.com");
-  const [password, setPassword] = useState("password123");
-  const { login } = useAuth();
+  const [contact, setContact] = useState("");
+  const [password, setPassword] = useState("");
+  const { login, googleLogin } = useAuth();
   const nav = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,15 +34,43 @@ export default function Login() {
         nav("/tenant");
       }
     } catch (err: any) {
-      setError(err.message || "Invalid email or password.");
+      setError(err.message || "Invalid email address or password.");
     } finally {
       setLoading(false);
     }
   };
 
-  const fillDemoAccount = (email: string, role: string) => {
-    setContact(email);
-    setPassword(role === "admin" ? "adminpassword123" : "password123");
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      // If Google Identity GIS is loaded
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.prompt(async (notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            // Fallback prompt
+            const email = prompt("Enter your Google Account email to continue:") || "";
+            if (email) {
+              const user = await googleLogin({ email, name: email.split("@")[0] });
+              if (user.role === "landlord") nav("/landlord");
+              else nav("/tenant");
+            }
+          }
+        });
+      } else {
+        // Direct Google OAuth prompt
+        const email = prompt("Enter your Google Account email:") || "";
+        if (email) {
+          const user = await googleLogin({ email, name: email.split("@")[0] });
+          if (user.role === "landlord") nav("/landlord");
+          else nav("/tenant");
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "Google authentication failed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,104 +80,129 @@ export default function Login() {
         <form onSubmit={handleLogin}>
           <p className="auth-kicker">WELCOME BACK</p>
           <h1>Sign in to Addis Kiray</h1>
-          <p>Continue your home-search journey in Addis Ababa.</p>
+          <p style={{ color: "#5f758a", fontSize: "14px", margin: "0 0 24px" }}>
+            Continue your home-search journey in Addis Ababa.
+          </p>
 
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", margin: "8px 0 14px" }}>
-            <span style={{ fontSize: "9px", color: "#6a8194", alignSelf: "center" }}>Demo quick fill:</span>
-            <button
-              type="button"
-              onClick={() => fillDemoAccount("alem@example.com", "tenant")}
-              style={{ padding: "3px 7px", fontSize: "8px", background: "#eef5f4", border: "1px solid #cce2dc", borderRadius: "99px", color: "#087d70", cursor: "pointer" }}
-            >
-              Tenant
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemoAccount("kalkidan@example.com", "landlord")}
-              style={{ padding: "3px 7px", fontSize: "8px", background: "#eef5f4", border: "1px solid #cce2dc", borderRadius: "99px", color: "#087d70", cursor: "pointer" }}
-            >
-              Landlord
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemoAccount("admin@addiskiray.com", "admin")}
-              style={{ padding: "3px 7px", fontSize: "8px", background: "#eef5f4", border: "1px solid #cce2dc", borderRadius: "99px", color: "#087d70", cursor: "pointer" }}
-            >
-              Admin
-            </button>
-          </div>
-
-          <label>
-            Email address
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#173858", marginBottom: "6px" }}>
+              Email address
+            </label>
             <input
               type="email"
               placeholder="you@example.com"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
               required
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                border: "1px solid #cbd9e1",
+                borderRadius: "8px",
+                fontSize: "14px",
+                color: "#173858",
+                boxSizing: "border-box",
+                background: "#ffffff",
+              }}
             />
-          </label>
+          </div>
 
-          <label>
-            Password
-            <div className="password-field">
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#173858", marginBottom: "6px" }}>
+              Password
+            </label>
+            <div className="password-field" style={{ position: "relative" }}>
               <input
                 type={pw ? "text" : "password"}
-                placeholder="Enter your password"
+                placeholder="Enter your account password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                style={{
+                  width: "100%",
+                  padding: "12px 40px 12px 14px",
+                  border: "1px solid #cbd9e1",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  color: "#173858",
+                  boxSizing: "border-box",
+                  background: "#ffffff",
+                }}
               />
               <button
                 type="button"
                 onClick={() => setPw(!pw)}
                 aria-label="Show password"
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#5f758a",
+                }}
               >
                 <Icon name="eye" />
               </button>
             </div>
-          </label>
+          </div>
 
           {error && (
-            <p className="login-error">
+            <div style={{ background: "#fff2f2", border: "1px solid #f5c6cb", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", color: "#721c24", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
               <Icon name="lock" />
-              {error}
-            </p>
+              <span>{error}</span>
+            </div>
           )}
 
-          <div className="login-options">
-            <label>
+          <div className="login-options" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#4f657a", cursor: "pointer" }}>
               <input type="checkbox" defaultChecked /> Remember me
             </label>
             <button
               type="button"
               onClick={() => alert("Password reset instructions will be sent to your email address.")}
+              style={{ background: "none", border: "none", color: "#0b8879", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
             >
               Forgot password?
             </button>
           </div>
 
-          <button className="auth-primary" type="submit" disabled={loading}>
+          <button className="auth-primary" type="submit" disabled={loading} style={{ width: "100%", padding: "12px", fontSize: "14px" }}>
             {loading ? "Signing In..." : "Sign In"}
           </button>
 
-          <div className="auth-divider">
-            <span>or</span>
+          <div className="auth-divider" style={{ margin: "20px 0", textAlign: "center" }}>
+            <span style={{ background: "#ffffff", padding: "0 12px", color: "#8a9fb0", fontSize: "12px" }}>or continue with</span>
           </div>
 
           <button
             className="google"
             type="button"
-            onClick={async () => {
-              await login("alem@example.com", "password123");
-              nav("/tenant");
+            onClick={handleGoogleSignIn}
+            style={{
+              width: "100%",
+              padding: "11px",
+              border: "1px solid #cbd9e1",
+              borderRadius: "8px",
+              background: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "#173858",
+              cursor: "pointer",
             }}
           >
-            G <span>Continue with Google (Demo Auto-Login)</span>
+            <Icon name="google" style={{ fontSize: "16px", color: "#ea4335" }} />
+            <span>Continue with Google</span>
           </button>
 
-          <p className="login-bottom">
-            Don’t have an account? <Link to="/register">Create one</Link>
+          <p className="login-bottom" style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#5f758a" }}>
+            Don't have an account? <Link to="/register" style={{ color: "#0b8879", fontWeight: 700, textDecoration: "none" }}>Create an account</Link>
           </p>
         </form>
       </div>
@@ -158,7 +217,7 @@ export default function Login() {
             <i>that fits your life.</i>
           </h2>
           <span>
-            Trusted search, clearer choices, and a little more ease in the move.
+            Trusted search, clearer choices, and direct landlord connections in Addis Ababa.
           </span>
         </div>
       </aside>

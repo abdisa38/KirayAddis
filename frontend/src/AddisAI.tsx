@@ -6,9 +6,10 @@ import Icon from "./components/Icon";
 import { apiRequest } from "./api/client";
 
 const samplePrompts = [
-  "I work in Bole, have a 35,000 ETB budget and need a quiet 2-bedroom home within 30 minutes.",
-  "Looking for an affordable 1-bedroom apartment near Kazanchis under 25,000 ETB with water backup.",
-  "Family moving to Addis: 3 bedrooms in CMC or Yeka with garden compound and parking.",
+  "I work in Bole around Edna Mall, have a 40,000 ETB budget and need a quiet 2-bedroom apartment with water backup.",
+  "Looking for an affordable 1-bedroom studio near Kazanchis UNECA under 25,000 ETB with backup generator.",
+  "Family moving to Addis: 3 bedrooms in CMC or Yeka with private compound and dedicated parking.",
+  "Diplomatic housing in Sarbet or Bisrate Gabriel: 4-bedroom villa with garden and 24/7 security.",
 ];
 
 interface AICriteria {
@@ -97,14 +98,11 @@ export default function AddisAI() {
   if (criteria) {
     if (criteria.subCity) filterChips.push(`${criteria.subCity} Sub-city`);
     if (criteria.neighborhood) filterChips.push(criteria.neighborhood);
-    if (criteria.maxPrice) filterChips.push(`≤ ${Number(criteria.maxPrice).toLocaleString()} ETB`);
+    if (criteria.maxPrice) filterChips.push(`Budget ≤ ${Number(criteria.maxPrice).toLocaleString()} ETB`);
     if (criteria.minBedrooms) filterChips.push(`${criteria.minBedrooms}+ Bedrooms`);
     if (criteria.propertyType) filterChips.push(criteria.propertyType);
     if (criteria.mustHaveAmenities?.length) {
       criteria.mustHaveAmenities.forEach((a) => filterChips.push(a));
-    }
-    if (criteria.keywords?.length) {
-      criteria.keywords.forEach((k) => filterChips.push(k));
     }
   }
 
@@ -122,7 +120,7 @@ export default function AddisAI() {
               <i>home means to you.</i>
             </h1>
             <span>
-              Describe your needs naturally in English or Amharic. We'll translate them into structured filters — then explain why each home fits.
+              Describe your needs naturally in English or Amharic. We will translate them into structured filters against live Addis Ababa properties and explain why each home fits.
             </span>
           </div>
 
@@ -134,21 +132,19 @@ export default function AddisAI() {
               placeholder="e.g. I work around Bole Edna Mall, earn 45,000 ETB, need a 2-bedroom apartment with 24/7 security and a backup generator..."
             />
 
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", margin: "10px 0" }}>
-              <span style={{ fontSize: "9px", color: "#6a8194", alignSelf: "center" }}>Try sample:</span>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: "12px 0" }}>
+              <span style={{ fontSize: "11px", color: "#6a8194", alignSelf: "center" }}>Quick Prompts:</span>
               {samplePrompts.map((p, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => {
-                    setQ(p);
-                  }}
+                  onClick={() => setQ(p)}
                   style={{
                     background: "#f0f6f5",
                     border: "1px solid #d4e5e1",
                     borderRadius: "99px",
-                    padding: "4px 8px",
-                    fontSize: "9px",
+                    padding: "4px 10px",
+                    fontSize: "11px",
                     color: "#254867",
                     cursor: "pointer",
                   }}
@@ -158,59 +154,55 @@ export default function AddisAI() {
               ))}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <small>Addis AI analyzes commute corridors, budget ranges, and required utilities.</small>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+              <small style={{ color: "#647d91", fontSize: "11px" }}>
+                Addis AI analyzes commute corridors, price limits, utility backups, and neighborhood livability.
+              </small>
               <button
                 type="button"
                 onClick={runSearch}
                 className="btn"
-                style={{ padding: "10px 18px" }}
+                style={{ padding: "10px 22px" }}
                 disabled={loading}
               >
-                {loading ? "✦ Analyzing..." : "Find my match"} <Icon name="arrow" />
+                {loading ? "Analyzing..." : "Find My Match"} <Icon name="arrow" />
               </button>
             </div>
           </div>
 
-          {/* Loading State */}
+          {/* Loading Pipeline State */}
           {loading && (
             <section className="ai-flow">
               <article className="active">
                 <b>1</b>
-                <span>User Need</span>
-                <small>Received ✓</small>
+                <span>User Intent</span>
+                <small>Received</small>
               </article>
               <i>→</i>
               <article className="active" style={{ animation: "pulse 1.5s infinite" }}>
-                <b>✦</b>
-                <span>Gemini AI</span>
-                <small>Processing...</small>
+                <Icon name="sparkles" />
+                <span>AI Parsing</span>
+                <small>Extracting filters...</small>
               </article>
               <i>→</i>
               <article>
                 <b>3</b>
-                <span>Filters</span>
-                <small>Waiting...</small>
+                <span>Database Query</span>
+                <small>Matching...</small>
               </article>
               <i>→</i>
               <article>
                 <b>4</b>
-                <span>Database</span>
-                <small>Waiting...</small>
-              </article>
-              <i>→</i>
-              <article>
-                <b>5</b>
-                <span>Results</span>
-                <small>Waiting...</small>
+                <span>Score & Rank</span>
+                <small>Calculating...</small>
               </article>
             </section>
           )}
 
-          {/* Error State */}
+          {/* Error Banner */}
           {error && (
             <div style={{ background: "#fff0f0", border: "1px solid #f5c6cb", borderRadius: "10px", padding: "16px 20px", margin: "20px 0", color: "#721c24", fontSize: "12px" }}>
-              <b>⚠ AI Error:</b> {error}
+              <b>Note:</b> {error}
             </div>
           )}
 
@@ -225,27 +217,27 @@ export default function AddisAI() {
                 </article>
                 <i>→</i>
                 <article className="active">
-                  <b>✦</b>
-                  <span>Gemini AI</span>
+                  <Icon name="sparkles" />
+                  <span>AI Engine</span>
                   <small>Criteria extracted</small>
                 </article>
                 <i>→</i>
                 <article className="active">
                   <b>3</b>
                   <span>Structured Filters</span>
-                  <small>{filterChips.length} filters</small>
+                  <small>{filterChips.length} active filters</small>
                 </article>
                 <i>→</i>
                 <article className="active">
                   <b>4</b>
                   <span>Addis Database</span>
-                  <small>{properties.length} found</small>
+                  <small>{properties.length} homes found</small>
                 </article>
                 <i>→</i>
                 <article className="active">
                   <b>5</b>
                   <span>Ranked Match</span>
-                  <small>Explanation included</small>
+                  <small>Detailed justifications</small>
                 </article>
               </section>
 
@@ -255,19 +247,23 @@ export default function AddisAI() {
                     <p>AI EXTRACTED CRITERIA</p>
                     <h2>Your search, made clear.</h2>
                     {criteria?.summary && (
-                      <small style={{ display: "block", color: "#5f758a", marginTop: "4px" }}>{criteria.summary}</small>
+                      <small style={{ display: "block", color: "#5f758a", marginTop: "4px", fontSize: "12px" }}>
+                        {criteria.summary}
+                      </small>
                     )}
                   </div>
                   {filterChips.map((x) => (
                     <button key={x} type="button">
-                      ✓ {x}
+                      <Icon name="check" /> {x}
                     </button>
                   ))}
-                  <Link to={`/search?location=${encodeURIComponent(criteria?.subCity || "")}`}>Edit in full search →</Link>
+                  <Link to={`/search?location=${encodeURIComponent(criteria?.subCity || "")}`}>
+                    Edit in full search →
+                  </Link>
                 </div>
 
-                {/* Property Results */}
-                {properties.slice(0, 3).map((p, i) => {
+                {/* Real Property Results */}
+                {properties.map((p) => {
                   const exp = getExplanation(p.title);
                   return (
                     <div className="ai-property" key={p._id}>
@@ -277,18 +273,30 @@ export default function AddisAI() {
                         <h2>{p.title}</h2>
                         <p>
                           {p.location.neighborhood}, {p.location.subCity} · ETB{" "}
-                          {p.price.toLocaleString()} / month · {p.bedrooms} bed · {p.bathrooms} bath · {p.area} m²
+                          {Number(p.price).toLocaleString()} / month · {p.bedrooms} bed · {p.bathrooms} bath · {p.area} m²
                         </p>
                         <div className="reasons">
                           <b>Why Addis AI recommended this home:</b>
                           {exp?.reasons?.map((r, ri) => (
-                            <small key={ri}>✓ {r}</small>
+                            <small key={ri}>
+                              <Icon name="check" style={{ color: "#087d70", marginRight: "4px" }} />
+                              {r}
+                            </small>
                           ))}
                           {!exp && (
                             <>
-                              <small>✓ Located in {p.location.neighborhood}, {p.location.subCity}</small>
-                              <small>✓ ETB {p.price.toLocaleString()}/month · {p.location.landmark}</small>
-                              <small>✓ Amenities: {p.amenities.slice(0, 4).join(", ")}</small>
+                              <small>
+                                <Icon name="check" style={{ color: "#087d70", marginRight: "4px" }} />
+                                Located in {p.location.neighborhood}, {p.location.subCity}
+                              </small>
+                              <small>
+                                <Icon name="check" style={{ color: "#087d70", marginRight: "4px" }} />
+                                ETB {Number(p.price).toLocaleString()} / month · {p.location.landmark}
+                              </small>
+                              <small>
+                                <Icon name="check" style={{ color: "#087d70", marginRight: "4px" }} />
+                                Amenities: {p.amenities.slice(0, 4).join(", ")}
+                              </small>
                             </>
                           )}
                         </div>
@@ -296,35 +304,22 @@ export default function AddisAI() {
                           <Link
                             to={`/property/${p._id}`}
                             className="btn"
-                            style={{ padding: "8px 14px", textDecoration: "none", fontSize: "10px" }}
+                            style={{ padding: "8px 16px", textDecoration: "none", fontSize: "11px" }}
                           >
-                            View property details →
+                            View Property Details →
                           </Link>
                           <Link
                             to="/messages"
                             className="btn outline"
-                            style={{ padding: "8px 14px", textDecoration: "none", fontSize: "10px" }}
+                            style={{ padding: "8px 16px", textDecoration: "none", fontSize: "11px" }}
                           >
-                            Inquire directly
+                            Message Landlord
                           </Link>
                         </div>
                       </div>
                     </div>
                   );
                 })}
-
-                {/* Additional results summary */}
-                {properties.length > 3 && (
-                  <div style={{ textAlign: "center", padding: "20px 0" }}>
-                    <Link
-                      to={`/search?location=${encodeURIComponent(criteria?.subCity || "")}`}
-                      className="btn outline"
-                      style={{ textDecoration: "none", padding: "10px 20px", fontSize: "11px" }}
-                    >
-                      View {properties.length - 3} more matching properties →
-                    </Link>
-                  </div>
-                )}
               </section>
             </>
           )}
@@ -333,9 +328,11 @@ export default function AddisAI() {
           {!loading && hasSearched && properties.length === 0 && !error && (
             <div style={{ textAlign: "center", padding: "40px 20px" }}>
               <h3 style={{ color: "#12385e", margin: "0 0 8px" }}>No exact matches found</h3>
-              <p style={{ color: "#6a8194", fontSize: "12px" }}>Try broadening your search or adjusting your budget.</p>
+              <p style={{ color: "#6a8194", fontSize: "12px" }}>
+                Try broadening your search or adjusting your budget.
+              </p>
               <Link to="/search" className="btn" style={{ textDecoration: "none", marginTop: "12px", display: "inline-block" }}>
-                Browse all properties →
+                Browse All Properties →
               </Link>
             </div>
           )}

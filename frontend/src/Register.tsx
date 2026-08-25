@@ -15,7 +15,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth();
   const nav = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +37,27 @@ export default function Register() {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const googleEmail = prompt("Enter your Google Account email to create account:") || "";
+      if (googleEmail) {
+        const user = await googleLogin({
+          email: googleEmail,
+          name: googleEmail.split("@")[0],
+          role,
+        });
+        if (user.role === "landlord") nav("/landlord");
+        else nav("/tenant");
+      }
+    } catch (err: any) {
+      setError(err.message || "Google sign-up failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="login-page">
       <div className="login-panel">
@@ -44,117 +65,209 @@ export default function Register() {
         <form onSubmit={handleSubmit}>
           <p className="auth-kicker">GET STARTED</p>
           <h1>Create your account</h1>
-          <p>Join Addis Kiray to find, save, and rent homes across Addis Ababa.</p>
+          <p style={{ color: "#5f758a", fontSize: "14px", margin: "0 0 20px" }}>
+            Join Addis Kiray to find, save, and rent homes across Addis Ababa.
+          </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", margin: "12px 0 16px" }}>
+          {/* Role Selector Tabs */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "18px" }}>
             <button
               type="button"
               onClick={() => setRole("tenant")}
-              className={`filter ${role === "tenant" ? "active" : ""}`}
-              style={{ justifyContent: "center", padding: "10px", width: "100%" }}
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid",
+                borderColor: role === "tenant" ? "#0b8879" : "#cbd9e1",
+                background: role === "tenant" ? "#0b8879" : "#ffffff",
+                color: role === "tenant" ? "#ffffff" : "#173858",
+                fontWeight: 700,
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
             >
-              I'm a Tenant
+              I am a Tenant
             </button>
             <button
               type="button"
               onClick={() => setRole("landlord")}
-              className={`filter ${role === "landlord" ? "active" : ""}`}
-              style={{ justifyContent: "center", padding: "10px", width: "100%" }}
+              style={{
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid",
+                borderColor: role === "landlord" ? "#0b8879" : "#cbd9e1",
+                background: role === "landlord" ? "#0b8879" : "#ffffff",
+                color: role === "landlord" ? "#ffffff" : "#173858",
+                fontWeight: 700,
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
             >
-              I'm a Landlord
+              I am a Landlord
             </button>
           </div>
 
-          <label>
-            Full name
+          <div style={{ marginBottom: "14px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#173858", marginBottom: "6px" }}>
+              Full name
+            </label>
             <input
               type="text"
               placeholder="e.g. Alem Mengistu"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              style={{
+                width: "100%",
+                padding: "11px 14px",
+                border: "1px solid #cbd9e1",
+                borderRadius: "8px",
+                fontSize: "14px",
+                color: "#173858",
+                boxSizing: "border-box",
+                background: "#ffffff",
+              }}
             />
-          </label>
+          </div>
 
-          <label>
-            Email address
+          <div style={{ marginBottom: "14px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#173858", marginBottom: "6px" }}>
+              Email address
+            </label>
             <input
               type="email"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              style={{
+                width: "100%",
+                padding: "11px 14px",
+                border: "1px solid #cbd9e1",
+                borderRadius: "8px",
+                fontSize: "14px",
+                color: "#173858",
+                boxSizing: "border-box",
+                background: "#ffffff",
+              }}
             />
-          </label>
+          </div>
 
-          <label>
-            Phone number (optional)
+          <div style={{ marginBottom: "14px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#173858", marginBottom: "6px" }}>
+              Phone number (optional)
+            </label>
             <input
               type="tel"
               placeholder="+251 9..."
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "11px 14px",
+                border: "1px solid #cbd9e1",
+                borderRadius: "8px",
+                fontSize: "14px",
+                color: "#173858",
+                boxSizing: "border-box",
+                background: "#ffffff",
+              }}
             />
-          </label>
+          </div>
 
-          <label>
-            Password
-            <div className="password-field">
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#173858", marginBottom: "6px" }}>
+              Password
+            </label>
+            <div className="password-field" style={{ position: "relative" }}>
               <input
                 type={pw ? "text" : "password"}
-                placeholder="Create a strong password (min 6 chars)"
+                placeholder="Create a password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                style={{
+                  width: "100%",
+                  padding: "11px 40px 11px 14px",
+                  border: "1px solid #cbd9e1",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  color: "#173858",
+                  boxSizing: "border-box",
+                  background: "#ffffff",
+                }}
               />
               <button
                 type="button"
                 onClick={() => setPw(!pw)}
                 aria-label="Show password"
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#5f758a",
+                }}
               >
                 <Icon name="eye" />
               </button>
             </div>
-          </label>
+          </div>
 
           {error && (
-            <p className="login-error">
+            <div style={{ background: "#fff2f2", border: "1px solid #f5c6cb", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", color: "#721c24", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
               <Icon name="lock" />
-              {error}
-            </p>
+              <span>{error}</span>
+            </div>
           )}
 
-          <div style={{ margin: "14px 0", fontSize: "10px", color: "#5d7388" }}>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontWeight: 400 }}>
-              <input type="checkbox" required style={{ marginTop: "2px", accentColor: "#0b8879" }} />
+          <div style={{ margin: "14px 0 20px", fontSize: "12px", color: "#5d7388" }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer" }}>
+              <input type="checkbox" required style={{ marginTop: "3px", accentColor: "#0b8879" }} />
               <span>
-                I agree to the Addis Kiray <Link to="/trust-safety" style={{ color: "#087d70" }}>Terms of Service</Link> and{" "}
-                <Link to="/trust-safety" style={{ color: "#087d70" }}>Privacy Policy</Link>.
+                I agree to the Addis Kiray <Link to="/trust-safety" style={{ color: "#0b8879", fontWeight: 700, textDecoration: "none" }}>Terms of Service</Link> and{" "}
+                <Link to="/trust-safety" style={{ color: "#0b8879", fontWeight: 700, textDecoration: "none" }}>Privacy Policy</Link>.
               </span>
             </label>
           </div>
 
-          <button className="auth-primary" type="submit" disabled={loading}>
+          <button className="auth-primary" type="submit" disabled={loading} style={{ width: "100%", padding: "12px", fontSize: "14px" }}>
             {loading ? "Creating Account..." : "Create Account"}
           </button>
 
-          <div className="auth-divider">
-            <span>or</span>
+          <div className="auth-divider" style={{ margin: "20px 0", textAlign: "center" }}>
+            <span style={{ background: "#ffffff", padding: "0 12px", color: "#8a9fb0", fontSize: "12px" }}>or sign up with</span>
           </div>
 
           <button
             className="google"
             type="button"
-            onClick={async () => {
-              await register("Demo Google User", `user_${Date.now()}@example.com`, "password123", role);
-              nav("/tenant");
+            onClick={handleGoogleSignUp}
+            style={{
+              width: "100%",
+              padding: "11px",
+              border: "1px solid #cbd9e1",
+              borderRadius: "8px",
+              background: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "#173858",
+              cursor: "pointer",
             }}
           >
-            G <span>Sign Up with Google</span>
+            <Icon name="google" style={{ fontSize: "16px", color: "#ea4335" }} />
+            <span>Sign Up with Google</span>
           </button>
 
-          <p className="login-bottom">
-            Already have an account? <Link to="/login">Sign In</Link>
+          <p className="login-bottom" style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#5f758a" }}>
+            Already have an account? <Link to="/login" style={{ color: "#0b8879", fontWeight: 700, textDecoration: "none" }}>Sign In</Link>
           </p>
         </form>
       </div>
