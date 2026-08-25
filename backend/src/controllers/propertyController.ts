@@ -74,20 +74,20 @@ export const getProperties = async (
       query["availability.status"] = { $in: ["Available", "Soon"] };
     }
 
-    if (search) {
+    const locationFilter = (subCity || req.query.location || search) as string | undefined;
+
+    if (locationFilter) {
+      const regex = { $regex: locationFilter.trim(), $options: "i" };
       query.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { "location.neighborhood": { $regex: search, $options: "i" } },
-        { "location.subCity": { $regex: search, $options: "i" } },
+        { "location.subCity": regex },
+        { "location.neighborhood": regex },
+        { "location.landmark": regex },
+        { title: regex },
+        { description: regex },
       ];
     }
 
-    if (subCity) {
-      query["location.subCity"] = { $regex: subCity, $options: "i" };
-    }
-
-    if (propertyType) {
+    if (propertyType && propertyType !== "All") {
       query.propertyType = propertyType;
     }
 
