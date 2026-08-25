@@ -394,3 +394,67 @@ export const getNeighborhoods = async (
     next(error);
   }
 };
+
+// @desc    Get all properties owned by authenticated landlord
+// @route   GET /api/properties/mine
+// @access  Private (Landlord, Admin)
+export const getMyProperties = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const properties = await Property.find({ owner: req.user?._id })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: properties.length,
+      properties,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle property availability status (Available <-> Rented)
+// @route   PATCH /api/properties/:id/toggle-status
+// @access  Private (Landlord, Admin)
+export const togglePropertyStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const property = await Property.findById(req.params.id);
+
+    if (!property) {
+      res.status(404).json({ success: false, message: "Property not found" });
+      return;
+    }
+
+    if (
+      property.owner.toString() !== req.user?._id.toString() &&
+      req.user?.role !== "admin"
+    ) {
+      res.status(403).json({ success: false, message: "Not authorized" });
+      return;
+    }
+
+    const currentStatus = property.availability.status;
+    const newStatus = currentStatus === "Available" ? "Rented" : "Available";
+
+    property.availability.status = newStatus as any;
+    property.availability.lastConfirmedAt = new Date();
+    await property.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Property marked as ${newStatus}.`,
+      property,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

@@ -197,3 +197,84 @@ export const requestViewing = async (
     next(error);
   }
 };
+
+// @desc    Get all viewing appointments for authenticated user (tenant or landlord)
+// @route   GET /api/messages/viewings
+// @access  Private
+export const getViewings = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?._id;
+    const role = req.user?.role;
+
+    let query: any = {};
+    if (role === "landlord") {
+      query.landlord = userId;
+    } else if (role === "admin") {
+      query = {};
+    } else {
+      query.tenant = userId;
+    }
+
+    const viewings = await Viewing.find(query)
+      .populate("tenant", "name email phone avatar")
+      .populate("landlord", "name email phone avatar")
+      .populate("property", "title price location media")
+      .sort({ appointmentDate: 1 });
+
+    res.status(200).json({
+      success: true,
+      count: viewings.length,
+      viewings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update viewing appointment status (confirm, cancel, reschedule)
+// @route   PATCH /api/messages/viewings/:id/status
+// @access  Private
+export const updateViewingStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+
+    const viewing = await Viewing.findById(id);
+    if (!viewing) {
+      res.status(404).json({ success: false, message: "Viewing appointment not found" });
+      return;
+    }
+
+    // Verify user is either landlord, tenant, or admin
+    const userId = req.user?._id.toString();
+    if (
+      viewing.landlord.toString() !== userId &&
+      viewing.tenant.toString() !== userId &&
+      req.user?.role !== "admin"
+    ) {
+      res.status(403).json({ success: false, message: "Not authorized to modify this viewing" });
+      return;
+    }
+
+    viewing.status = status || viewing.status;
+    if (notes) viewing.notes = notes;
+    await viewing.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Viewing appointment marked as ${status}.`,
+      viewing,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

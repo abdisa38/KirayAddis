@@ -135,3 +135,143 @@ export const getAllUsers = async (
     next(error);
   }
 };
+
+// @desc    Submit trust & safety report
+// @route   POST /api/admin/reports
+// @access  Public / Private
+export const createReport = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { propertyId, reason, details } = req.body;
+
+    let reporterId = req.user?._id;
+    if (!reporterId) {
+      // Find default tenant or first user
+      const defaultUser = await User.findOne({ role: "tenant" });
+      reporterId = defaultUser?._id;
+    }
+
+    const report = await Report.create({
+      reporter: reporterId,
+      targetType: "property",
+      targetId: propertyId || (await Property.findOne())?._id,
+      reason: reason || "Inaccurate listing data",
+      description: details || "",
+      status: "open",
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Report submitted successfully.",
+      report,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all reports
+// @route   GET /api/admin/reports
+// @access  Private (Admin)
+export const getReports = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const reports = await Report.find()
+      .populate("reporter", "name email phone")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: reports.length,
+      reports,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle user verification or active status
+// @route   PATCH /api/admin/users/:id/status
+// @access  Private (Admin)
+export const toggleUserStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { verificationTier } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+
+    if (verificationTier) {
+      user.verificationTier = verificationTier;
+    } else {
+      user.verificationTier =
+        user.verificationTier === "property_verified" || user.verificationTier === "id_verified"
+          ? "unverified"
+          : user.role === "landlord"
+          ? "property_verified"
+          : "id_verified";
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User status updated to ${user.verificationTier}.`,
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update report status (investigating, resolved, dismissed)
+// @route   PATCH /api/admin/reports/:id/status
+// @access  Private (Admin)
+export const updateReportStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { status, adminNotes } = req.body;
+
+    const report = await Report.findById(id);
+    if (!report) {
+      res.status(404).json({ success: false, message: "Report not found" });
+      return;
+    }
+
+    report.status = status || report.status;
+    if (adminNotes) report.adminNotes = adminNotes;
+    if (status === "resolved" || status === "dismissed") {
+      report.resolvedAt = new Date();
+      report.resolvedBy = req.user?._id as any;
+    }
+
+    await report.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Report status updated to ${status}.`,
+      report,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
