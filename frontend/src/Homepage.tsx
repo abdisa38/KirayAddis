@@ -66,7 +66,8 @@ const fallbackNeighborhoods: NeighborhoodData[] = [
 export default function Homepage() {
   const [locationInput, setLocationInput] = useState("Bole, Addis Ababa");
   const [destinationInput, setDestinationInput] = useState("Edna Mall area");
-  const [budget, setBudget] = useState("40,000");
+  const [budget, setBudget] = useState("40000");
+  const [propertyType, setPropertyType] = useState("All");
   const [aiQuery, setAiQuery] = useState("I work in Bole, earn 40k, need a 2-bedroom house under 30 min commute.");
   const [savedHomes, setSavedHomes] = useState<Record<number, boolean>>({});
   const [liveHomes, setLiveHomes] = useState<HomeData[]>([]);
@@ -148,7 +149,12 @@ export default function Homepage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    nav(`/search?location=${encodeURIComponent(locationInput)}`);
+    const params = new URLSearchParams();
+    if (locationInput.trim()) params.set("location", locationInput.trim());
+    if (destinationInput.trim()) params.set("destination", destinationInput.trim());
+    if (budget && budget !== "All") params.set("maxPrice", budget);
+    if (propertyType && propertyType !== "All") params.set("propertyType", propertyType);
+    nav(`/search?${params.toString()}`);
   };
 
   return (
@@ -263,16 +269,20 @@ export default function Homepage() {
                       fontSize: "11px",
                       color: "#345873",
                       background: "#fff",
+                      cursor: "pointer",
                     }}
                   >
-                    <option value="25,000">Up to 25,000 ETB</option>
-                    <option value="40,000">Up to 40,000 ETB</option>
-                    <option value="60,000">Up to 60,000 ETB</option>
-                    <option value="100,000">100,000+ ETB</option>
+                    <option value="All">Any Budget</option>
+                    <option value="20000">Up to 20,000 ETB</option>
+                    <option value="35000">Up to 35,000 ETB</option>
+                    <option value="50000">Up to 50,000 ETB</option>
+                    <option value="75000">Up to 75,000 ETB</option>
+                    <option value="120000">Up to 120,000+ ETB</option>
                   </select>
 
                   <select
-                    defaultValue="Apartment"
+                    value={propertyType}
+                    onChange={(e) => setPropertyType(e.target.value)}
                     style={{
                       flex: 1,
                       padding: "10px",
@@ -281,13 +291,15 @@ export default function Homepage() {
                       fontSize: "11px",
                       color: "#345873",
                       background: "#fff",
+                      cursor: "pointer",
                     }}
                   >
+                    <option value="All">All Property Types</option>
                     <option value="Apartment">Apartment</option>
-                    <option value="House">Standalone House</option>
-                    <option value="Condominium">Condominium</option>
                     <option value="Studio">Studio</option>
+                    <option value="Condominium">Condominium</option>
                     <option value="Villa">Villa</option>
+                    <option value="House">House</option>
                   </select>
                 </div>
 
@@ -309,20 +321,31 @@ export default function Homepage() {
               </div>
             </form>
 
-            <div className="suggestions" style={{ marginTop: "12px" }}>
-              <span>Popular:</span>
-              {["Bole", "Kazanchis", "CMC", "Yeka", "Sarbet"].map((loc) => (
+            <div className="suggestions" style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "11px", color: "#647c90" }}>Popular:</span>
+              {["Bole", "Kazanchis", "CMC", "Yeka", "Sarbet", "Piassa", "Mexico", "Gullele"].map((loc) => (
                 <button
                   key={loc}
                   type="button"
-                  onClick={() => setLocationInput(loc)}
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
+                  onClick={() => {
+                    setLocationInput(loc);
+                    nav(`/search?location=${encodeURIComponent(loc)}`);
+                  }}
+                  style={{
+                    background: "#f0f5f7",
+                    border: "1px solid #d0e0e8",
+                    borderRadius: "4px",
+                    padding: "3px 8px",
+                    fontSize: "10px",
+                    color: "#087d70",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
                 >
                   {loc}
                 </button>
-              ))}
               <Link to="/ai" style={{ marginLeft: "auto", color: "#087d70", fontSize: "10px", fontWeight: 800, textDecoration: "none" }}>
-                ✦ Ask Addis AI Assistant →
+                Ask Addis AI Assistant →
               </Link>
             </div>
           </div>
