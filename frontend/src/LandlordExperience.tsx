@@ -212,16 +212,19 @@ export default function LandlordExperience() {
                 </h1>
                 <span
                   style={{
-                    background: "rgba(11, 136, 121, 0.35)",
-                    color: "#8bd9ca",
-                    border: "1px solid #8bd9ca",
+                    background: "rgba(11, 136, 121, 0.25)",
+                    border: "1px solid #0b8879",
+                    color: "#7eead9",
                     padding: "2px 8px",
                     borderRadius: "99px",
                     fontSize: "10px",
                     fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
                   }}
                 >
-                  ✓ Verified Landlord
+                  <Icon name="check" /> Verified Landlord
                 </span>
               </div>
               <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#c2d6e4" }}>
@@ -248,7 +251,7 @@ export default function LandlordExperience() {
                 gap: "8px",
               }}
             >
-              <Icon name="plus" /> + List New Property (9 Steps)
+              <Icon name="plus" /> List New Property
             </button>
             <button
               onClick={() => nav("/messages")}
@@ -261,9 +264,12 @@ export default function LandlordExperience() {
                 fontWeight: 700,
                 fontSize: "12px",
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
               }}
             >
-              💬 Tenant Messages
+              <Icon name="message" /> Tenant Messages
             </button>
           </div>
         </div>
@@ -285,7 +291,8 @@ export default function LandlordExperience() {
               gap: "8px",
             }}
           >
-            <Icon name="check" /> {actionMessage}
+            <Icon name="check" />
+            <span>{actionMessage}</span>
           </div>
         )}
 
@@ -300,10 +307,10 @@ export default function LandlordExperience() {
           }}
         >
           {[
-            { id: "overview", label: "📊 Dashboard Overview", count: null },
-            { id: "listings", label: "🏡 My Properties", count: properties.length },
-            { id: "viewings", label: "📅 Tenant Viewings", count: pendingViewingsCount > 0 ? pendingViewingsCount : null },
-            { id: "verification", label: "🛡️ Verification & Trust", count: null },
+            { id: "overview", icon: "chart", label: "Dashboard Overview", count: null },
+            { id: "listings", icon: "home", label: "My Properties", count: properties.length },
+            { id: "viewings", icon: "calendar", label: "Tenant Viewings", count: pendingViewingsCount > 0 ? pendingViewingsCount : null },
+            { id: "verification", icon: "shield", label: "Verification & Trust", count: null },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -323,6 +330,7 @@ export default function LandlordExperience() {
                 transition: "all 0.15s ease",
               }}
             >
+              <Icon name={tab.icon} />
               {tab.label}
               {tab.count !== null && (
                 <span

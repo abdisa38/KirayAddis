@@ -228,16 +228,19 @@ export default function TenantExperience() {
                 </h1>
                 <span
                   style={{
-                    background: "rgba(11, 136, 121, 0.35)",
-                    color: "#8bd9ca",
-                    border: "1px solid #8bd9ca",
+                    background: "rgba(11, 136, 121, 0.25)",
+                    border: "1px solid #0b8879",
+                    color: "#7eead9",
                     padding: "2px 8px",
                     borderRadius: "99px",
                     fontSize: "10px",
                     fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
                   }}
                 >
-                  ✓ Verified Renter
+                  <Icon name="check" /> Verified Renter
                 </span>
               </div>
               <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#c2d6e4" }}>
@@ -276,9 +279,12 @@ export default function TenantExperience() {
                 fontWeight: 700,
                 fontSize: "12px",
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
               }}
             >
-              ✦ Ask Addis AI
+              <Icon name="sparkles" /> Ask Addis AI
             </button>
           </div>
         </div>
@@ -300,7 +306,8 @@ export default function TenantExperience() {
               gap: "8px",
             }}
           >
-            <Icon name="check" /> {actionMessage}
+            <Icon name="check" />
+            <span>{actionMessage}</span>
           </div>
         )}
 
@@ -315,10 +322,10 @@ export default function TenantExperience() {
           }}
         >
           {[
-            { id: "matches", label: "✨ Recommended for You", count: recommended.length },
-            { id: "saved", label: "❤️ Saved Homes", count: savedHomes.length },
-            { id: "viewings", label: "📅 Scheduled Viewings", count: viewings.length },
-            { id: "preferences", label: "⚙️ Match Preferences", count: null },
+            { id: "matches", icon: "sparkles", label: "Recommended for You", count: recommended.length },
+            { id: "saved", icon: "heart", label: "Saved Homes", count: savedHomes.length },
+            { id: "viewings", icon: "calendar", label: "Scheduled Viewings", count: viewings.length },
+            { id: "preferences", icon: "sliders", label: "Match Preferences", count: null },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -338,6 +345,7 @@ export default function TenantExperience() {
                 transition: "all 0.15s ease",
               }}
             >
+              <Icon name={tab.icon} />
               {tab.label}
               {tab.count !== null && (
                 <span
