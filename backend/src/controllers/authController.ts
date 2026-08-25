@@ -163,3 +163,86 @@ export const verifyEmail = async (
     next(error);
   }
 };
+
+// @desc    Sign in / Sign up with Google OAuth
+// @route   POST /api/auth/google
+// @access  Public
+export const googleAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { credential, email, name, avatar, role } = req.body;
+
+    let userEmail = email;
+    let userName = name;
+    let userAvatar = avatar;
+
+    // Decode Google ID Token if passed as credential
+    if (credential) {
+      try {
+        const base64Url = credential.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          Buffer.from(base64, "base64")
+            .toString("latin1")
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+        );
+        const decoded = JSON.parse(jsonPayload);
+        userEmail = decoded.email;
+        userName = decoded.name;
+        userAvatar = decoded.picture;
+      } catch (decodeErr) {
+        // Fallback to directly provided email/name
+      }
+    }
+
+    if (!userEmail) {
+      res.status(400).json({
+        success: false,
+        message: "Unable to retrieve email from Google credential.",
+      });
+      return;
+    }
+
+    // Find or create user
+    let user = await User.findOne({ email: userEmail.toLowerCase() });
+
+    if (!user) {
+      user = await User.create({
+        name: userName || userEmail.split("@")[0],
+        email: userEmail.toLowerCase(),
+        password: Math.random().toString(36).slice(-12) + "Ak9#",
+        role: role || "tenant",
+        avatar: userAvatar || "",
+        isEmailVerified: true,
+        verificationTier: "phone_verified",
+      });
+    }
+
+    const token = generateToken(user._id.toString());
+
+    res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        avatar: user.avatar,
+        isEmailVerified: user.isEmailVerified,
+        verificationTier: user.verificationTier,
+        preferences: user.preferences,
+        savedProperties: user.savedProperties,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
