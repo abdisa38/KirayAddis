@@ -14,28 +14,168 @@ try {
 
 dotenv.config();
 
-const pics = [
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80",
+// Curated high-res unique architecture & interior photos
+const photos = {
+  // Bole Apartments & Penthouses
+  boleMedhanealem: [
+    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?auto=format&fit=crop&w=900&q=80",
+  ],
+  boleAtlas: [
+    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=900&q=80",
+  ],
+  boleRwandaPenthouse: [
+    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=900&q=80",
+  ],
+  boleBrassStudio: [
+    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1502005229762-ee1b2b8ab98f?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=80",
+  ],
+  boleBulbulaVilla: [
+    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
+  ],
+
+  // Kazanchis / Kirkos
+  kazanchisStudio: [
+    "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=900&q=80",
+  ],
+  kazanchisBalcony: [
+    "https://images.unsplash.com/photo-1567496898669-ee935f5f647a?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80",
+  ],
+  meskelFlower: [
+    "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
+  ],
+  goteraHighrise: [
+    "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1615873968403-89e068629265?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=900&q=80",
+  ],
+
+  // CMC & Yeka
+  cmcMichaelCondo: [
+    "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80",
+  ],
+  cmcSafaricomStudio: [
+    "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1505692794406-0a256976cb17?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
+  ],
+  cmcSummitVilla: [
+    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?auto=format&fit=crop&w=900&q=80",
+  ],
+  yekaAbadoHome: [
+    "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80",
+  ],
+  yekaHillsPanoramic: [
+    "https://images.unsplash.com/photo-1502005097973-6a7082348e28?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80",
+  ],
+  yekaMegenagnaFlat: [
+    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80",
+  ],
+
+  // Sarbet / Nifas Silk-Lafto
+  sarbetDiplomaticVilla: [
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
+  ],
+  sarbetTomocaFlat: [
+    "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1556912167-f556f1f39fdf?auto=format&fit=crop&w=900&q=80",
+  ],
+  bisrateGabrielCondo: [
+    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1502005229762-ee1b2b8ab98f?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?auto=format&fit=crop&w=900&q=80",
+  ],
+  jommoStudio: [
+    "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1505692794406-0a256976cb17?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
+  ],
+
+  // Piassa / Arada
+  piassaCorridor: [
+    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=900&q=80",
+  ],
+  piassa4KiloStudio: [
+    "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=900&q=80",
+  ],
+  aratKiloApartment: [
+    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80",
+  ],
+
+  // Lideta / Mexico
+  lidetaCondo: [
+    "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1615873968403-89e068629265?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80",
+  ],
+  mexicoSquareFlat: [
+    "https://images.unsplash.com/photo-1567496898669-ee935f5f647a?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80",
+  ],
+
+  // Gullele
+  shiroMedaVilla: [
+    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?auto=format&fit=crop&w=900&q=80",
+  ],
+  addisuGebeyaFlat: [
+    "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1556912167-f556f1f39fdf?auto=format&fit=crop&w=900&q=80",
+  ],
+};
+
+const toMedia = (urls: string[]) => [
+  { url: urls[0], isCover: true, type: "image" },
+  { url: urls[1], isCover: false, type: "image" },
+  { url: urls[2], isCover: false, type: "image" },
 ];
 
 const seedData = async () => {
   try {
     const connUri = process.env.MONGO_URI;
-    if (!connUri) {
-      throw new Error("MONGO_URI not configured in .env");
-    }
+    if (!connUri) throw new Error("MONGO_URI not configured in .env");
 
     console.log("[Seeder] Connecting to MongoDB Atlas...");
     await mongoose.connect(connUri);
     console.log("[Seeder] Connected successfully!");
 
-    // Clear existing data
     console.log("[Seeder] Clearing old collections...");
     await Promise.all([
       User.deleteMany({}),
@@ -46,8 +186,7 @@ const seedData = async () => {
       Report.deleteMany({}),
     ]);
 
-    console.log("[Seeder] Creating demo users...");
-    // 1. Create Tenant
+    console.log("[Seeder] Creating demo accounts...");
     const tenant = await User.create({
       name: "Alem Mengistu",
       email: "alem@example.com",
@@ -64,7 +203,6 @@ const seedData = async () => {
       },
     });
 
-    // 2. Create Landlord
     const landlord = await User.create({
       name: "Kalkidan Mengesha",
       email: "kalkidan@example.com",
@@ -75,7 +213,6 @@ const seedData = async () => {
       verificationTier: "property_verified",
     });
 
-    // 3. Create Admin
     const admin = await User.create({
       name: "Admin Kiray",
       email: "admin@addiskiray.com",
@@ -86,11 +223,9 @@ const seedData = async () => {
       verificationTier: "property_verified",
     });
 
-    console.log("[Seeder] Creating rich Addis Ababa properties across all sub-cities...");
+    console.log("[Seeder] Creating 26 realistic properties with unique galleries...");
     const properties = await Property.create([
-      // ==========================================
-      // BOLE SUB-CITY (5 Properties)
-      // ==========================================
+      // 1. Bole Medhanealem (42,000 ETB)
       {
         owner: landlord._id,
         title: "Sunlit Two-Bedroom Apartment in Bole Medhanealem",
@@ -109,15 +244,14 @@ const seedData = async () => {
           coordinates: { lat: 8.9984, lng: 38.7891 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Generator", "Compound", "Internet", "24/7 security", "Balcony"],
-        media: [
-          { url: pics[0], isCover: true, type: "image" },
-          { url: pics[1], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.boleMedhanealem),
         rentalTerms: { minContractMonths: 6, furnishing: "Partially furnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 184, inquiries: 9, saves: 28 },
       },
+
+      // 2. Bole Atlas (36,000 ETB)
       {
         owner: landlord._id,
         title: "Modern 2-Bed Flat near Bole Atlas Hotel",
@@ -136,15 +270,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0065, lng: 38.7824 },
         },
         amenities: ["Parking", "Water", "Electricity", "Generator", "Internet", "24/7 security"],
-        media: [
-          { url: pics[1], isCover: true, type: "image" },
-          { url: pics[2], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.boleAtlas),
         rentalTerms: { minContractMonths: 12, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 95, inquiries: 7, saves: 19 },
       },
+
+      // 3. Bole Rwanda Penthouse (95,000 ETB)
       {
         owner: landlord._id,
         title: "Luxury Penthouse Suite in Bole Rwanda",
@@ -163,15 +296,14 @@ const seedData = async () => {
           coordinates: { lat: 8.9900, lng: 38.7990 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Generator", "Internet", "Elevator", "Balcony", "24/7 security", "CCTV", "Gym"],
-        media: [
-          { url: pics[4], isCover: true, type: "image" },
-          { url: pics[0], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.boleRwandaPenthouse),
         rentalTerms: { minContractMonths: 12, furnishing: "Fully furnished", paymentFrequency: "Quarterly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 245, inquiries: 14, saves: 42 },
       },
+
+      // 4. Bole Brass Studio (24,000 ETB)
       {
         owner: landlord._id,
         title: "Cosy Studio Apartment in Bole Brass",
@@ -190,15 +322,14 @@ const seedData = async () => {
           coordinates: { lat: 8.9950, lng: 38.7840 },
         },
         amenities: ["Water", "Electricity", "Internet", "24/7 security", "Water tank"],
-        media: [
-          { url: pics[2], isCover: true, type: "image" },
-          { url: pics[3], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.boleBrassStudio),
         rentalTerms: { minContractMonths: 6, furnishing: "Fully furnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 110, inquiries: 8, saves: 15 },
       },
+
+      // 5. Bole Bulbula Villa (70,000 ETB)
       {
         owner: landlord._id,
         title: "Spacious Family Villa in Bole Bulbula",
@@ -217,19 +348,14 @@ const seedData = async () => {
           coordinates: { lat: 8.9750, lng: 38.7800 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Generator", "Garden", "Compound", "24/7 security"],
-        media: [
-          { url: pics[5], isCover: true, type: "image" },
-          { url: pics[6], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.boleBulbulaVilla),
         rentalTerms: { minContractMonths: 12, furnishing: "Unfurnished", paymentFrequency: "Quarterly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 88, inquiries: 5, saves: 14 },
       },
 
-      // ==========================================
-      // KIRKOS / KAZANCHIS SUB-CITY (4 Properties)
-      // ==========================================
+      // 6. Kazanchis UNECA Studio (22,000 ETB)
       {
         owner: landlord._id,
         title: "Furnished Studio near Kazanchis Business District",
@@ -248,15 +374,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0170, lng: 38.7700 },
         },
         amenities: ["Water", "Electricity", "Internet", "Elevator", "24/7 security", "Generator"],
-        media: [
-          { url: pics[0], isCover: true, type: "image" },
-          { url: pics[2], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.kazanchisStudio),
         rentalTerms: { minContractMonths: 3, furnishing: "Fully furnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 165, inquiries: 11, saves: 31 },
       },
+
+      // 7. Kazanchis 2-Bed Balcony (34,000 ETB)
       {
         owner: landlord._id,
         title: "Two-Bedroom Apartment with Balcony in Kazanchis",
@@ -275,15 +400,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0195, lng: 38.7654 },
         },
         amenities: ["Water", "Water tank", "Electricity", "Generator", "Elevator", "Balcony", "24/7 security", "Parking"],
-        media: [
-          { url: pics[3], isCover: true, type: "image" },
-          { url: pics[1], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.kazanchisBalcony),
         rentalTerms: { minContractMonths: 12, furnishing: "Partially furnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 142, inquiries: 8, saves: 26 },
       },
+
+      // 8. Meskel Flower 3-Bed (48,000 ETB)
       {
         owner: landlord._id,
         title: "Charming 3-Bed Apartment in Meskel Flower",
@@ -302,15 +426,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0010, lng: 38.7680 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Generator", "Balcony", "24/7 security"],
-        media: [
-          { url: pics[1], isCover: true, type: "image" },
-          { url: pics[5], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.meskelFlower),
         rentalTerms: { minContractMonths: 12, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 78, inquiries: 4, saves: 16 },
       },
+
+      // 9. Gotera High-Rise Condo (27,000 ETB)
       {
         owner: landlord._id,
         title: "Modern High-Rise Condo in Gotera / Olympia",
@@ -325,23 +448,18 @@ const seedData = async () => {
           city: "Addis Ababa",
           subCity: "Kirkos",
           neighborhood: "Gotera",
-          landmark: "Near Gotera Interchange",
+          landmark: "Near Gotera Interchange & Olympia",
           coordinates: { lat: 8.9880, lng: 38.7610 },
         },
         amenities: ["Parking", "Water", "Electricity", "Elevator", "24/7 security"],
-        media: [
-          { url: pics[2], isCover: true, type: "image" },
-          { url: pics[0], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.goteraHighrise),
         rentalTerms: { minContractMonths: 6, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 92, inquiries: 6, saves: 11 },
       },
 
-      // ==========================================
-      // CMC & YEKA SUB-CITIES (6 Properties)
-      // ==========================================
+      // 10. CMC Michael Condo (28,000 ETB)
       {
         owner: landlord._id,
         title: "Spacious Condominium Unit in CMC Michael",
@@ -360,15 +478,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0427, lng: 38.8362 },
         },
         amenities: ["Parking", "Water", "Electricity", "Compound", "Generator", "24/7 security"],
-        media: [
-          { url: pics[2], isCover: true, type: "image" },
-          { url: pics[3], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.cmcMichaelCondo),
         rentalTerms: { minContractMonths: 12, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 82, inquiries: 5, saves: 14 },
       },
+
+      // 11. CMC Safaricom Studio (15,000 ETB)
       {
         owner: landlord._id,
         title: "Affordable Studio near CMC Safaricom HQ",
@@ -387,15 +504,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0445, lng: 38.8390 },
         },
         amenities: ["Water", "Electricity", "Internet", "24/7 security"],
-        media: [
-          { url: pics[0], isCover: true, type: "image" },
-          { url: pics[1], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.cmcSafaricomStudio),
         rentalTerms: { minContractMonths: 6, furnishing: "Fully furnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 65, inquiries: 4, saves: 9 },
       },
+
+      // 12. CMC Summit Villa (65,000 ETB)
       {
         owner: landlord._id,
         title: "Modern 3-Bed Villa in Summit Compound",
@@ -414,15 +530,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0350, lng: 38.8550 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Generator", "Garden", "Compound", "24/7 security"],
-        media: [
-          { url: pics[6], isCover: true, type: "image" },
-          { url: pics[4], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.cmcSummitVilla),
         rentalTerms: { minContractMonths: 12, furnishing: "Partially furnished", paymentFrequency: "Quarterly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 115, inquiries: 6, saves: 21 },
       },
+
+      // 13. Yeka Abado Family Home (39,500 ETB)
       {
         owner: landlord._id,
         title: "Quiet Home in a Secure Compound in Yeka",
@@ -441,15 +556,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0289, lng: 38.8045 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Compound", "Garden", "24/7 security"],
-        media: [
-          { url: pics[2], isCover: true, type: "image" },
-          { url: pics[3], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.yekaAbadoHome),
         rentalTerms: { minContractMonths: 12, furnishing: "Unfurnished", paymentFrequency: "Quarterly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 120, inquiries: 7, saves: 23 },
       },
+
+      // 14. Yeka Hills Panoramic Flat (45,000 ETB)
       {
         owner: landlord._id,
         title: "Panoramic Hillside Flat in Yeka Hills",
@@ -468,15 +582,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0312, lng: 38.8100 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Generator", "Internet", "Balcony", "Elevator", "24/7 security"],
-        media: [
-          { url: pics[3], isCover: true, type: "image" },
-          { url: pics[0], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.yekaHillsPanoramic),
         rentalTerms: { minContractMonths: 12, furnishing: "Partially furnished", paymentFrequency: "Quarterly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 98, inquiries: 5, saves: 17 },
       },
+
+      // 15. Yeka Megenagna Flat (31,000 ETB)
       {
         owner: landlord._id,
         title: "2-Bedroom Apartment near Megenagna Square",
@@ -495,19 +608,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0200, lng: 38.7950 },
         },
         amenities: ["Water", "Electricity", "Elevator", "24/7 security", "Balcony"],
-        media: [
-          { url: pics[1], isCover: true, type: "image" },
-          { url: pics[2], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.yekaMegenagnaFlat),
         rentalTerms: { minContractMonths: 6, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 135, inquiries: 9, saves: 20 },
       },
 
-      // ==========================================
-      // NIFAS SILK-LAFTO / SARBET (4 Properties)
-      // ==========================================
+      // 16. Sarbet Diplomatic Villa (85,000 ETB)
       {
         owner: landlord._id,
         title: "Elegant Diplomatic Villa in Sarbet",
@@ -526,15 +634,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0022, lng: 38.7561 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Generator", "Garden", "Compound", "Internet", "24/7 security", "CCTV"],
-        media: [
-          { url: pics[5], isCover: true, type: "image" },
-          { url: pics[0], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.sarbetDiplomaticVilla),
         rentalTerms: { minContractMonths: 12, furnishing: "Fully furnished", paymentFrequency: "Quarterly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 155, inquiries: 8, saves: 27 },
       },
+
+      // 17. Sarbet Tomoca Cafe Flat (38,000 ETB)
       {
         owner: landlord._id,
         title: "Cozy 2-Bedroom near Sarbet Tomoca Cafe",
@@ -553,15 +660,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0035, lng: 38.7585 },
         },
         amenities: ["Water", "Electricity", "Internet", "Balcony", "24/7 security", "Parking"],
-        media: [
-          { url: pics[1], isCover: true, type: "image" },
-          { url: pics[2], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.sarbetTomocaFlat),
         rentalTerms: { minContractMonths: 6, furnishing: "Partially furnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 104, inquiries: 6, saves: 18 },
       },
+
+      // 18. Bisrate Gabriel Condo (32,000 ETB)
       {
         owner: landlord._id,
         title: "Modern 3-Bed Condominium in Bisrate Gabriel",
@@ -580,15 +686,14 @@ const seedData = async () => {
           coordinates: { lat: 8.9950, lng: 38.7450 },
         },
         amenities: ["Parking", "Water", "Electricity", "24/7 security", "Balcony"],
-        media: [
-          { url: pics[0], isCover: true, type: "image" },
-          { url: pics[4], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.bisrateGabrielCondo),
         rentalTerms: { minContractMonths: 12, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 89, inquiries: 5, saves: 13 },
       },
+
+      // 19. Jommo 1 Budget Studio (11,000 ETB)
       {
         owner: landlord._id,
         title: "Budget-Friendly Studio in Jommo 1",
@@ -607,19 +712,14 @@ const seedData = async () => {
           coordinates: { lat: 8.9600, lng: 38.7250 },
         },
         amenities: ["Water", "Electricity"],
-        media: [
-          { url: pics[2], isCover: true, type: "image" },
-          { url: pics[3], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.jommoStudio),
         rentalTerms: { minContractMonths: 3, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 160, inquiries: 12, saves: 22 },
       },
 
-      // ==========================================
-      // ARADA / PIASSA SUB-CITY (3 Properties)
-      // ==========================================
+      // 20. Piassa Corridor 2-Bed (26,000 ETB)
       {
         owner: landlord._id,
         title: "Renovated 2-Bedroom in Historic Piassa Corridor",
@@ -638,15 +738,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0300, lng: 38.7468 },
         },
         amenities: ["Water", "Electricity", "Internet", "24/7 security"],
-        media: [
-          { url: pics[0], isCover: true, type: "image" },
-          { url: pics[3], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.piassaCorridor),
         rentalTerms: { minContractMonths: 12, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 110, inquiries: 7, saves: 16 },
       },
+
+      // 21. Piassa 4 Kilo Student Studio (13,000 ETB)
       {
         owner: landlord._id,
         title: "Budget Student Flat near 4 Kilo University",
@@ -660,20 +759,19 @@ const seedData = async () => {
         location: {
           city: "Addis Ababa",
           subCity: "Arada",
-          neighborhood: "4 Kilo",
+          neighborhood: "Piassa",
           landmark: "Near AAU 4 Kilo Science Campus",
           coordinates: { lat: 9.0380, lng: 38.7620 },
         },
         amenities: ["Water", "Electricity"],
-        media: [
-          { url: pics[2], isCover: true, type: "image" },
-          { url: pics[1], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.piassa4KiloStudio),
         rentalTerms: { minContractMonths: 3, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 175, inquiries: 15, saves: 29 },
       },
+
+      // 22. Arat Kilo Classic Residence (35,000 ETB)
       {
         owner: landlord._id,
         title: "Classic 3-Bedroom Residence in Arat Kilo",
@@ -687,24 +785,19 @@ const seedData = async () => {
         location: {
           city: "Addis Ababa",
           subCity: "Arada",
-          neighborhood: "Arat Kilo",
+          neighborhood: "Piassa",
           landmark: "Near Trinity Cathedral & Parliament",
           coordinates: { lat: 9.0350, lng: 38.7660 },
         },
         amenities: ["Water", "Water tank", "Electricity", "Parking", "24/7 security"],
-        media: [
-          { url: pics[4], isCover: true, type: "image" },
-          { url: pics[1], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.aratKiloApartment),
         rentalTerms: { minContractMonths: 12, furnishing: "Partially furnished", paymentFrequency: "Quarterly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 80, inquiries: 4, saves: 11 },
       },
 
-      // ==========================================
-      // LIDETA & GULLELE SUB-CITIES (4 Properties)
-      // ==========================================
+      // 23. Lideta Condominium (25,000 ETB)
       {
         owner: landlord._id,
         title: "Modern 2-Bed Condominium in Lideta",
@@ -723,15 +816,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0120, lng: 38.7480 },
         },
         amenities: ["Water", "Electricity", "Parking", "24/7 security"],
-        media: [
-          { url: pics[1], isCover: true, type: "image" },
-          { url: pics[2], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.lidetaCondo),
         rentalTerms: { minContractMonths: 6, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 94, inquiries: 6, saves: 15 },
       },
+
+      // 24. Mexico Square Flat (30,000 ETB)
       {
         owner: landlord._id,
         title: "Commercial & Residential Flat in Mexico Square",
@@ -750,15 +842,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0100, lng: 38.7500 },
         },
         amenities: ["Water", "Electricity", "Elevator", "24/7 security", "Internet"],
-        media: [
-          { url: pics[3], isCover: true, type: "image" },
-          { url: pics[0], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.mexicoSquareFlat),
         rentalTerms: { minContractMonths: 6, furnishing: "Partially furnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 118, inquiries: 8, saves: 21 },
       },
+
+      // 25. Shiro Meda Green Villa (40,000 ETB)
       {
         owner: landlord._id,
         title: "Serene Green Villa in Shiro Meda / Gullele",
@@ -777,15 +868,14 @@ const seedData = async () => {
           coordinates: { lat: 9.0550, lng: 38.7650 },
         },
         amenities: ["Parking", "Water", "Water tank", "Electricity", "Garden", "Compound", "24/7 security"],
-        media: [
-          { url: pics[6], isCover: true, type: "image" },
-          { url: pics[5], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.shiroMedaVilla),
         rentalTerms: { minContractMonths: 12, furnishing: "Unfurnished", paymentFrequency: "Quarterly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 76, inquiries: 4, saves: 12 },
       },
+
+      // 26. Addisu Gebeya Flat (23,000 ETB)
       {
         owner: landlord._id,
         title: "2-Bedroom Apartment in Addisu Gebeya",
@@ -804,10 +894,7 @@ const seedData = async () => {
           coordinates: { lat: 9.0600, lng: 38.7450 },
         },
         amenities: ["Water", "Electricity", "Balcony", "24/7 security"],
-        media: [
-          { url: pics[2], isCover: true, type: "image" },
-          { url: pics[1], isCover: false, type: "image" },
-        ],
+        media: toMedia(photos.addisuGebeyaFlat),
         rentalTerms: { minContractMonths: 6, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
         availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
@@ -815,8 +902,7 @@ const seedData = async () => {
       },
     ]);
 
-    // Create Initial Inquiries and Viewings
-    console.log("[Seeder] Creating sample inquiries and viewing appointments...");
+    // Initial Inquiry & Message
     const inquiry = await Inquiry.create({
       participants: [tenant._id, landlord._id],
       property: properties[0]._id,
@@ -841,7 +927,7 @@ const seedData = async () => {
       tenant: tenant._id,
       landlord: landlord._id,
       property: properties[0]._id,
-      appointmentDate: new Date(Date.now() + 86400000 * 2), // 2 days from now
+      appointmentDate: new Date(Date.now() + 86400000 * 2),
       appointmentTime: "10:00 AM",
       notes: "Looking to inspect backup water reservoir and parking spot.",
       status: "confirmed",
@@ -850,8 +936,8 @@ const seedData = async () => {
     console.log("\n==========================================");
     console.log("Addis Kiray Database Seeded Successfully!");
     console.log("==========================================");
-    console.log(`Total Properties Seeded: ${properties.length} listings across all Addis Ababa sub-cities.`);
-    console.log("Sub-Cities Covered: Bole, Kazanchis/Kirkos, CMC, Yeka, Sarbet/Nifas Silk, Piassa/Arada, Mexico/Lideta, Gullele");
+    console.log(`Total Properties Seeded: ${properties.length} listings.`);
+    console.log("Each property has a UNIQUE 3-photo gallery & distinct architecture!");
     console.log("==========================================\n");
 
     process.exit(0);
