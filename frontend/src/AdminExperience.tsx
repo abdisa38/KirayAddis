@@ -171,23 +171,23 @@ export default function AdminExperience() {
                 borderRadius: "50%",
                 background: "#0b8879",
                 color: "#ffffff",
-                fontSize: "20px",
+                fontSize: "22px",
                 fontWeight: 800,
                 display: "grid",
                 placeItems: "center",
                 border: "2px solid rgba(255,255,255,0.3)",
               }}
             >
-              👑
+              <Icon name="crown" />
             </div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 800 }}>Admin Operations Console</h1>
                 <span
                   style={{
-                    background: "rgba(11, 136, 121, 0.35)",
-                    color: "#8bd9ca",
-                    border: "1px solid #8bd9ca",
+                    background: "rgba(11, 136, 121, 0.25)",
+                    border: "1px solid #0b8879",
+                    color: "#7eead9",
                     padding: "2px 8px",
                     borderRadius: "99px",
                     fontSize: "10px",
@@ -215,9 +215,12 @@ export default function AdminExperience() {
                 fontWeight: 800,
                 fontSize: "12px",
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
               }}
             >
-              Public Marketplace →
+              Public Marketplace <Icon name="arrow" />
             </button>
           </div>
         </div>
@@ -239,7 +242,8 @@ export default function AdminExperience() {
               gap: "8px",
             }}
           >
-            <Icon name="check" /> {toast}
+            <Icon name="check" />
+            <span>{toast}</span>
           </div>
         )}
 
@@ -254,11 +258,11 @@ export default function AdminExperience() {
           }}
         >
           {[
-            { id: "dashboard", label: "📊 KPI Analytics", count: null },
-            { id: "queue", label: "🛡️ Moderation Queue", count: queue.length > 0 ? queue.length : null },
-            { id: "users", label: "👥 User Management", count: usersList.length },
-            { id: "properties", label: "🏡 All Listings", count: propertiesList.length },
-            { id: "reports", label: "🚩 Trust Reports", count: reportsList.length > 0 ? reportsList.length : null },
+            { id: "dashboard", icon: "chart", label: "KPI Analytics", count: null },
+            { id: "queue", icon: "shield", label: "Moderation Queue", count: queue.length > 0 ? queue.length : null },
+            { id: "users", icon: "users", label: "User Management", count: usersList.length },
+            { id: "properties", icon: "home", label: "All Listings", count: propertiesList.length },
+            { id: "reports", icon: "flag", label: "Trust Reports", count: reportsList.length > 0 ? reportsList.length : null },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -273,6 +277,13 @@ export default function AdminExperience() {
                 fontSize: "12px",
                 cursor: "pointer",
                 display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <Icon name={tab.icon} />
+              {tab.label}
                 alignItems: "center",
                 gap: "8px",
                 transition: "all 0.15s ease",
