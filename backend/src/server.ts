@@ -23,7 +23,12 @@ connectDB();
 const app = express();
 
 // Security and HTTP Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(
   cors({
     origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",") : "*",
