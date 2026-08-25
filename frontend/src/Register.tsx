@@ -8,6 +8,7 @@ export default function Register() {
   const searchParams = new URLSearchParams(window.location.search);
   const initialRole = searchParams.get("role") === "landlord" ? "landlord" : "tenant";
   const [role, setRole] = useState<"tenant" | "landlord">(initialRole);
+  const [pw, setPw] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
