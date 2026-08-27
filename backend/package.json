@@ -1,6 +1,7 @@
 {
   "name": "addis-kiray-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend API for Addis Kiray Rental Discovery & Relocation Platform",
   "main": "dist/server.js",
   "scripts": {
