@@ -35,27 +35,28 @@ export default function PropertyDetails() {
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [messageText, setMessageText] = useState("");
-  const [viewingDate, setViewingDate] = useState("2026-08-25");
+  const [viewingDate, setViewingDate] = useState("2026-08-28");
   const [viewingTime, setViewingTime] = useState("10:00 AM");
   const [propData, setPropData] = useState<any>(null);
   const [similarHomes, setSimilarHomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const nav = useNavigate();
 
   useEffect(() => {
-    if (!id) return;
     setLoading(true);
+    const targetEndpoint = id && id.length === 24 ? `/properties/${id}` : `/properties?limit=1`;
 
-    apiRequest(`/properties/${id}`)
+    apiRequest(targetEndpoint)
       .then((data: any) => {
-        if (data.success && data.property) {
-          setPropData(data.property);
-          // Fetch similar homes in the same sub-city or neighborhood
-          const subCity = data.property.location?.subCity || "";
+        const found = data.property || (data.properties ? data.properties[0] : null);
+        if (found) {
+          setPropData(found);
+          const subCity = found.location?.subCity || "";
           apiRequest(`/properties?limit=3&subCity=${encodeURIComponent(subCity)}`)
             .then((simData: any) => {
               if (simData.success && simData.properties) {
-                setSimilarHomes(simData.properties.filter((p: any) => p._id !== id));
+                setSimilarHomes(simData.properties.filter((p: any) => p._id !== found._id));
               }
             })
             .catch(() => {});
@@ -88,45 +89,53 @@ export default function PropertyDetails() {
     : ["Water", "Water tank", "Electricity", "24/7 security", "Parking"];
 
   const handleModalSubmit = async () => {
-    if (contact) {
-      if (propData?._id && user) {
-        try {
-          await apiRequest("/messages/conversations", {
-            method: "POST",
-            body: JSON.stringify({
-              propertyId: propData._id,
-              initialMessage: messageText || "Hello, I am interested in this listing. Is it available for viewing?",
-            }),
-          });
-        } catch (err) {}
+    if (!user) {
+      alert("Please sign in or create an account to message landlords and book viewings.");
+      nav("/login");
+      return;
+    }
+
+    if (!propData?._id) return;
+    setSubmitting(true);
+
+    try {
+      if (contact) {
+        await apiRequest("/messages/conversations", {
+          method: "POST",
+          body: JSON.stringify({
+            propertyId: propData._id,
+            initialMessage: messageText.trim() || "Hello, I am interested in this listing. Is it available for viewing?",
+          }),
+        });
+        setContact(false);
+        nav("/messages");
+      } else if (viewing) {
+        await apiRequest("/messages/viewings", {
+          method: "POST",
+          body: JSON.stringify({
+            propertyId: propData._id,
+            appointmentDate: viewingDate,
+            appointmentTime: viewingTime,
+            notes: messageText.trim() || "Viewing appointment request",
+          }),
+        });
+        setModalSuccess(true);
+        setTimeout(() => {
+          setModalSuccess(false);
+          setViewing(false);
+          nav("/messages");
+        }, 1200);
+      } else if (report) {
+        setModalSuccess(true);
+        setTimeout(() => {
+          setModalSuccess(false);
+          setReport(false);
+        }, 1200);
       }
-      setContact(false);
-      nav("/messages");
-    } else if (viewing) {
-      if (propData?._id && user) {
-        try {
-          await apiRequest("/messages/viewings", {
-            method: "POST",
-            body: JSON.stringify({
-              propertyId: propData._id,
-              appointmentDate: viewingDate,
-              appointmentTime: viewingTime,
-              notes: messageText,
-            }),
-          });
-        } catch (err) {}
-      }
-      setModalSuccess(true);
-      setTimeout(() => {
-        setModalSuccess(false);
-        setViewing(false);
-      }, 1500);
-    } else {
-      setModalSuccess(true);
-      setTimeout(() => {
-        setModalSuccess(false);
-        setReport(false);
-      }, 1500);
+    } catch (err: any) {
+      alert(err.message || "Failed to submit request.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -444,15 +453,40 @@ export default function PropertyDetails() {
 
       {/* Gallery Modal */}
       {gallery && (
-        <div className="modal" onClick={() => setGallery(false)}>
-          <div className="modal-card gallery-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head">
-              <h2>{propertyTitle} — Photo Gallery</h2>
-              <button onClick={() => setGallery(false)} type="button">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(13, 52, 91, 0.75)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+          onClick={() => setGallery(false)}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              maxWidth: "800px",
+              width: "100%",
+              padding: "24px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+              maxHeight: "85vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#11355b", margin: 0 }}>{propertyTitle} — Photo Gallery</h2>
+              <button onClick={() => setGallery(false)} type="button" style={{ background: "none", border: "none", cursor: "pointer" }}>
                 <Icon name="close" />
               </button>
             </div>
-            <div className="modal-body" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", maxHeight: "70vh", overflowY: "auto" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               {propertyMedia.map((url, i) => (
                 <img
                   key={i}
@@ -466,92 +500,178 @@ export default function PropertyDetails() {
         </div>
       )}
 
-      {/* Contact Landlord Modal */}
+      {/* Contact Landlord Modal — Centered Overlay */}
       {contact && (
-        <div className="modal" onClick={() => setContact(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head">
-              <h2>Contact {landlordName}</h2>
-              <button onClick={() => setContact(false)} type="button">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(13, 52, 91, 0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+          onClick={() => setContact(false)}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              maxWidth: "480px",
+              width: "100%",
+              padding: "24px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <p style={{ margin: 0, fontSize: "11px", fontWeight: 800, color: "#087d70", textTransform: "uppercase" }}>INQUIRY</p>
+                <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#11355b", margin: "2px 0 0" }}>Message {landlordName}</h2>
+              </div>
+              <button onClick={() => setContact(false)} type="button" style={{ background: "none", border: "none", cursor: "pointer" }}>
                 <Icon name="close" />
               </button>
             </div>
-            <div className="modal-body">
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px" }}>
-                Your inquiry message:
-              </label>
-              <textarea
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                placeholder="Hi, I am interested in this listing. Is it available for viewing this week?"
-                style={{ width: "100%", height: "100px", padding: "10px", borderRadius: "8px", border: "1px solid #cbd9e1" }}
-              />
+
+            <p style={{ fontSize: "12px", color: "#5a7488", marginBottom: "14px" }}>
+              Send an inquiry regarding <b>{propertyTitle}</b> (ETB {propertyPrice}/mo).
+            </p>
+
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#11355b", marginBottom: "6px" }}>
+              Your Message:
+            </label>
+            <textarea
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              placeholder="Hi, I am interested in this listing. Is it available for in-person viewing this week?"
+              rows={4}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "1px solid #cbd9e1",
+                fontSize: "13px",
+                boxSizing: "border-box",
+                resize: "vertical",
+              }}
+            />
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
               <button
-                className="btn"
-                style={{ width: "100%", marginTop: "14px" }}
                 type="button"
-                onClick={handleModalSubmit}
+                className="btn outline"
+                onClick={() => setContact(false)}
+                style={{ flex: 1 }}
               >
-                Send Message to Landlord
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={submitting}
+                onClick={handleModalSubmit}
+                style={{ flex: 2 }}
+              >
+                {submitting ? "Sending..." : "Send Message to Landlord"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Request Viewing Modal */}
+      {/* Request Viewing Modal — Centered Overlay */}
       {viewing && (
-        <div className="modal" onClick={() => setViewing(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head">
-              <h2>Request Property Viewing</h2>
-              <button onClick={() => setViewing(false)} type="button">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(13, 52, 91, 0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+          onClick={() => setViewing(false)}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              maxWidth: "480px",
+              width: "100%",
+              padding: "24px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#11355b", margin: 0 }}>Request Property Viewing</h2>
+              <button onClick={() => setViewing(false)} type="button" style={{ background: "none", border: "none", cursor: "pointer" }}>
                 <Icon name="close" />
               </button>
             </div>
-            <div className="modal-body">
-              {modalSuccess ? (
-                <div style={{ textAlign: "center", padding: "20px" }}>
-                  <Icon name="check" style={{ fontSize: "32px", color: "#0b8879" }} />
-                  <h3 style={{ marginTop: "8px" }}>Viewing Request Sent!</h3>
-                  <p style={{ fontSize: "12px", color: "#567084" }}>The landlord has been notified.</p>
-                </div>
-              ) : (
-                <>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
-                    Preferred Date:
-                  </label>
-                  <input
-                    type="date"
-                    value={viewingDate}
-                    onChange={(e) => setViewingDate(e.target.value)}
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd9e1", marginBottom: "12px" }}
-                  />
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>
-                    Preferred Time:
-                  </label>
-                  <select
-                    value={viewingTime}
-                    onChange={(e) => setViewingTime(e.target.value)}
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #cbd9e1", marginBottom: "12px" }}
-                  >
-                    <option value="09:00 AM">09:00 AM</option>
-                    <option value="10:00 AM">10:00 AM</option>
-                    <option value="02:00 PM">02:00 PM</option>
-                    <option value="04:00 PM">04:00 PM</option>
-                    <option value="05:30 PM">05:30 PM</option>
-                  </select>
-                  <button
-                    className="btn"
-                    style={{ width: "100%", marginTop: "8px" }}
-                    type="button"
-                    onClick={handleModalSubmit}
-                  >
-                    Submit Viewing Request
-                  </button>
-                </>
-              )}
-            </div>
+
+            {modalSuccess ? (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <Icon name="check" style={{ fontSize: "36px", color: "#0b8879" }} />
+                <h3 style={{ marginTop: "10px", color: "#11355b" }}>Viewing Request Sent!</h3>
+                <p style={{ fontSize: "12px", color: "#567084" }}>The landlord has received your appointment request and can confirm it on Addis Kiray.</p>
+              </div>
+            ) : (
+              <>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#11355b", marginBottom: "4px" }}>
+                  Preferred Date:
+                </label>
+                <input
+                  type="date"
+                  value={viewingDate}
+                  onChange={(e) => setViewingDate(e.target.value)}
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd9e1", marginBottom: "12px", boxSizing: "border-box" }}
+                />
+
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#11355b", marginBottom: "4px" }}>
+                  Preferred Time:
+                </label>
+                <select
+                  value={viewingTime}
+                  onChange={(e) => setViewingTime(e.target.value)}
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd9e1", marginBottom: "12px", boxSizing: "border-box" }}
+                >
+                  <option value="09:00 AM">09:00 AM</option>
+                  <option value="10:00 AM">10:00 AM (Morning)</option>
+                  <option value="02:00 PM">02:00 PM (Afternoon)</option>
+                  <option value="04:00 PM">04:00 PM</option>
+                  <option value="05:30 PM">05:30 PM (Evening)</option>
+                </select>
+
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#11355b", marginBottom: "4px" }}>
+                  Notes for Landlord (optional):
+                </label>
+                <textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="I would like to inspect the backup water tank and parking spot."
+                  rows={2}
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd9e1", marginBottom: "14px", boxSizing: "border-box" }}
+                />
+
+                <button
+                  className="btn"
+                  style={{ width: "100%" }}
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleModalSubmit}
+                >
+                  {submitting ? "Submitting..." : "Submit Viewing Request"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
