@@ -29,12 +29,18 @@ app.use(
     crossOriginEmbedderPolicy: false,
   })
 );
+
+// Fully permissive CORS for Vercel, localhost, and custom domains
 app.use(
   cors({
-    origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",") : "*",
+    origin: true,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   })
 );
+app.options("*", cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -87,7 +93,7 @@ app.get("/api/health", (req: Request, res: Response) => {
   });
 });
 
-// Mount Routes
+// Mount Routes under both /api/* and root aliases for flexibility
 app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/tenant", tenantRoutes);
@@ -95,7 +101,17 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 
+// Direct root aliases
+app.use("/auth", authRoutes);
+app.use("/properties", propertyRoutes);
+app.use("/tenant", tenantRoutes);
+app.use("/messages", messageRoutes);
+app.use("/admin", adminRoutes);
+app.use("/ai", aiRoutes);
+
 // Centralized Error Handling Middleware
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

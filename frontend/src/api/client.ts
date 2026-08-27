@@ -1,5 +1,14 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// Intelligent URL normalizer
+let rawBase = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").trim();
+// Remove any trailing slashes
+rawBase = rawBase.replace(/\/+$/, "");
+
+// Ensure it ends with /api
+if (!rawBase.endsWith("/api")) {
+  rawBase = `${rawBase}/api`;
+}
+
+export const API_BASE_URL = rawBase;
 
 export async function apiRequest<T = any>(
   endpoint: string,
@@ -16,7 +25,11 @@ export async function apiRequest<T = any>(
     (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // Ensure clean single slash before endpoint
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const fullUrl = `${API_BASE_URL}${cleanEndpoint}`;
+
+  const response = await fetch(fullUrl, {
     ...options,
     headers,
   });
