@@ -302,3 +302,57 @@ User query: "${prompt}"`;
     next(error);
   }
 };
+
+// @desc    Generate professional property description using Gemini / intelligent NLP
+// @route   POST /api/ai/generate-description
+// @access  Public
+export const generateDescription = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { title, propertyType, bedrooms, bathrooms, area, location, landmark, rent, amenities, furnishing } = req.body;
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    let description = "";
+
+    if (apiKey && apiKey.length > 10) {
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+        const prompt = `You are a real estate copywriter in Addis Ababa, Ethiopia.
+Write an enticing, professional, and honest rental property description (2-3 sentences, 40-60 words) for Addis Kiray marketplace.
+Details:
+- Title: "${title || "Rental Property"}"
+- Property Type: ${propertyType || "Apartment"}
+- Bedrooms: ${bedrooms || 2}, Bathrooms: ${bathrooms || 1}
+- Size: ${area || 90} m²
+- Location: ${location || "Addis Ababa"} (Landmark: ${landmark || "Centrally located"})
+- Price: ETB ${rent || "40,000"} / month
+- Furnishing: ${furnishing || "Unfurnished"}
+- Key Amenities: ${Array.isArray(amenities) ? amenities.join(", ") : "Water backup, Security, Parking"}
+
+Write ONLY the final description text with no quotes, no markdown, and no preamble.`;
+
+        const result = await model.generateContent(prompt);
+        description = result.response.text().trim().replace(/^"|"$/g, "");
+      } catch (err: any) {
+        console.warn("[Addis AI] Description generator fallback:", err?.message || err);
+      }
+    }
+
+    if (!description) {
+      const amenitiesText = Array.isArray(amenities) && amenities.length > 0 ? amenities.slice(0, 4).join(", ") : "reliable utilities and 24/7 security";
+      description = `A beautifully maintained ${bedrooms || 2}-bedroom ${propertyType ? propertyType.toLowerCase() : "apartment"} in ${location || "Addis Ababa"} near ${landmark || "key transport routes"}. Offering ${area || 90} m² of bright living space with ${amenitiesText}, this home is ideal for tenants seeking comfortable, connected city living.`;
+    }
+
+    res.status(200).json({
+      success: true,
+      description,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

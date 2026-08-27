@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { aiMatch } from "../controllers/aiController.js";
+import { aiMatch, generateDescription } from "../controllers/aiController.js";
 
 const router = Router();
 
 router.post("/match", aiMatch);
+router.post("/generate-description", generateDescription);
 
 export default router;
