@@ -7,11 +7,19 @@ import { calculateMatchScore } from "./propertyController.js";
 function extractCriteriaHeuristically(prompt: string) {
   const lower = prompt.toLowerCase();
 
-  // Sub-city detection
+  // Sub-city / Neighborhood detection
   let subCity: string | null = null;
   let neighborhood: string | null = null;
 
-  if (lower.includes("bole atlas")) {
+  if (lower.includes("saris") || lower.includes("kality") || lower.includes("gotera") || lower.includes("jommo") || lower.includes("lebu")) {
+    subCity = "Nifas Silk-Lafto";
+    if (lower.includes("saris")) neighborhood = "Saris";
+    else if (lower.includes("jommo")) neighborhood = "Jommo";
+    else if (lower.includes("gotera")) neighborhood = "Gotera";
+  } else if (lower.includes("sarbet") || lower.includes("sar bet") || lower.includes("bisrate gabriel") || lower.includes("nifas silk")) {
+    subCity = "Nifas Silk-Lafto";
+    neighborhood = "Sarbet";
+  } else if (lower.includes("bole atlas")) {
     subCity = "Bole";
     neighborhood = "Bole Atlas";
   } else if (lower.includes("medhanealem") || lower.includes("edna mall")) {
@@ -19,29 +27,32 @@ function extractCriteriaHeuristically(prompt: string) {
     neighborhood = "Bole Medhanealem";
   } else if (lower.includes("bole")) {
     subCity = "Bole";
-  } else if (lower.includes("kazanchis") || lower.includes("kirkos")) {
+  } else if (lower.includes("kazanchis") || lower.includes("kirkos") || lower.includes("meskel flower")) {
     subCity = "Kirkos";
     neighborhood = "Kazanchis";
-  } else if (lower.includes("cmc")) {
+  } else if (lower.includes("cmc") || lower.includes("summit") || lower.includes("ayat")) {
     subCity = "CMC";
-  } else if (lower.includes("yeka") || lower.includes("megenagna")) {
+    neighborhood = "CMC Michael";
+  } else if (lower.includes("yeka") || lower.includes("megenagna") || lower.includes("signal")) {
     subCity = "Yeka";
-  } else if (lower.includes("sarbet") || lower.includes("sar bet") || lower.includes("nifas silk")) {
-    subCity = "Nifas Silk-Lafto";
-    neighborhood = "Sarbet";
-  } else if (lower.includes("piassa") || lower.includes("piassa") || lower.includes("arada")) {
+  } else if (lower.includes("piassa") || lower.includes("arada") || lower.includes("4 kilo") || lower.includes("arat kilo")) {
     subCity = "Arada";
     neighborhood = "Piassa";
+  } else if (lower.includes("mexico") || lower.includes("lideta")) {
+    subCity = "Lideta";
+    neighborhood = "Mexico";
+  } else if (lower.includes("gullele") || lower.includes("shiro meda") || lower.includes("addisu gebeya")) {
+    subCity = "Gullele";
   }
 
   // Price extraction
   let maxPrice: number | null = null;
   const kMatch = lower.match(/(\d+)\s*k\b/i);
-  const numMatch = lower.match(/(?:under|budget|below|up to|max|around|etb|birr)?\s*(\d{1,3}(?:,\d{3})+|\d{4,6})/i);
+  const explicitNum = lower.match(/(\d{1,3}(?:,\d{3})+|\b\d{4,6}\b)/);
   if (kMatch) {
     maxPrice = parseInt(kMatch[1], 10) * 1000;
-  } else if (numMatch) {
-    const raw = numMatch[1].replace(/,/g, "");
+  } else if (explicitNum) {
+    const raw = explicitNum[1].replace(/,/g, "");
     const parsed = parseInt(raw, 10);
     if (parsed >= 5000 && parsed <= 500000) {
       maxPrice = parsed;
@@ -68,7 +79,7 @@ function extractCriteriaHeuristically(prompt: string) {
   // Amenities
   const mustHaveAmenities: string[] = [];
   if (lower.includes("water") || lower.includes("reservoir") || lower.includes("tank")) {
-    mustHaveAmenities.push("Water", "Water tank");
+    mustHaveAmenities.push("Water tank", "Water");
   }
   if (lower.includes("generator") || lower.includes("power") || lower.includes("electricity")) {
     mustHaveAmenities.push("Generator");
@@ -90,16 +101,16 @@ function extractCriteriaHeuristically(prompt: string) {
   }
 
   const keywords = [];
-  if (subCity) keywords.push(subCity);
-  if (neighborhood && neighborhood !== subCity) keywords.push(neighborhood);
+  if (neighborhood || subCity) keywords.push(neighborhood || subCity!);
   if (propertyType) keywords.push(propertyType);
   if (minBedrooms) keywords.push(`${minBedrooms}+ Bed`);
   if (maxPrice) keywords.push(`Budget ≤ ${maxPrice.toLocaleString()} ETB`);
+  if (mustHaveAmenities.length > 0) keywords.push(mustHaveAmenities[0]);
 
   return {
     subCity,
     neighborhood,
-    maxPrice: maxPrice || 45000,
+    maxPrice,
     minBedrooms,
     propertyType,
     mustHaveAmenities: Array.from(new Set(mustHaveAmenities)),
@@ -108,7 +119,7 @@ function extractCriteriaHeuristically(prompt: string) {
   };
 }
 
-// @desc    AI-powered property matching using Gemini with robust NLP fallback
+// @desc    AI-powered property matching using Gemini with robust NLP
 // @route   POST /api/ai/match
 // @access  Public
 export const aiMatch = async (
@@ -130,7 +141,7 @@ export const aiMatch = async (
     let criteria: any = null;
     let usedGemini = false;
 
-    // Attempt Gemini 2.0 Flash / Pro analysis if API key is present
+    // Attempt Gemini 2.0 Flash analysis if API key is present
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey && apiKey.length > 10) {
       try {
@@ -141,8 +152,8 @@ export const aiMatch = async (
 Extract structured search criteria from the user's natural language query.
 Return ONLY valid JSON (no markdown, no backticks, no explanation) with these fields:
 {
-  "subCity": "string or null (one of: Bole, Kirkos, Yeka, CMC, Arada, Nifas Silk-Lafto)",
-  "neighborhood": "string or null (e.g. Kazanchis, Sarbet, Piassa, Bole Atlas, CMC Michael)",
+  "subCity": "string or null (one of: Bole, Kirkos, Yeka, CMC, Arada, Nifas Silk-Lafto, Lideta, Gullele)",
+  "neighborhood": "string or null (e.g. Saris, Kazanchis, Sarbet, Piassa, Bole Atlas, CMC Michael, Gotera, Mexico, Shiro Meda)",
   "maxPrice": "number or null (monthly rent in ETB)",
   "minBedrooms": "number or null",
   "propertyType": "string or null (Apartment, House, Condominium, Studio, Villa, Shared)",
@@ -159,73 +170,79 @@ User query: "${prompt}"`;
         criteria = JSON.parse(cleaned);
         usedGemini = true;
       } catch (geminiErr: any) {
-        console.warn("[Addis AI] Gemini API call skipped or errored, using intelligent NLP fallback:", geminiErr?.message || geminiErr);
+        console.warn("[Addis AI] Gemini API call fallback:", geminiErr?.message || geminiErr);
       }
     }
 
-    // If Gemini wasn't available or errored, use intelligent heuristic extraction
     if (!criteria) {
       criteria = extractCriteriaHeuristically(prompt);
     }
 
-    // Step 2: Build MongoDB query from extracted criteria
+    // Step 2: Build MongoDB query respecting user's strict criteria
     const query: any = {
       "availability.status": { $in: ["Available", "Soon"] },
     };
 
-    if (criteria.subCity) {
-      query["location.subCity"] = { $regex: criteria.subCity, $options: "i" };
-    }
-    if (criteria.neighborhood) {
+    // Location filter
+    const loc = criteria.neighborhood || criteria.subCity;
+    if (loc) {
+      const locRegex = { $regex: loc, $options: "i" };
       query.$or = [
-        { "location.neighborhood": { $regex: criteria.neighborhood, $options: "i" } },
-        { "location.subCity": { $regex: criteria.neighborhood, $options: "i" } },
+        { "location.neighborhood": locRegex },
+        { "location.subCity": locRegex },
+        { "location.landmark": locRegex },
+        { title: locRegex },
       ];
     }
+
+    // Price filter (strict budget ceiling)
     if (criteria.maxPrice) {
-      query.price = { $lte: Number(criteria.maxPrice) * 1.25 }; // 25% tolerance
+      query.price = { $lte: Number(criteria.maxPrice) * 1.35 };
     }
+
+    // Bedrooms
     if (criteria.minBedrooms) {
       query.bedrooms = { $gte: Number(criteria.minBedrooms) };
     }
+
+    // Property Type
     if (criteria.propertyType) {
       query.propertyType = criteria.propertyType;
     }
-    if (criteria.mustHaveAmenities?.length) {
-      query.amenities = { $in: criteria.mustHaveAmenities };
-    }
 
-    // Step 3: Fetch matching properties from MongoDB
+    // Step 3: Fetch matching properties
     let properties = await Property.find(query)
       .populate("owner", "name role avatar verificationTier")
+      .sort({ price: 1 })
       .limit(6);
 
-    // If no results with strict criteria, fall back to broader search
-    if (properties.length === 0) {
-      const fallbackQuery: any = {
+    // Fallback 1: If no exact bedroom match in that location, relax bedroom/type but KEEP price ceiling
+    if (properties.length === 0 && criteria.maxPrice) {
+      const priceFallback: any = {
         "availability.status": { $in: ["Available", "Soon"] },
+        price: { $lte: Number(criteria.maxPrice) * 1.4 },
       };
-      if (criteria.subCity) {
-        fallbackQuery["location.subCity"] = { $regex: criteria.subCity, $options: "i" };
-      }
-      properties = await Property.find(fallbackQuery)
+      properties = await Property.find(priceFallback)
         .populate("owner", "name role avatar verificationTier")
+        .sort({ price: 1 })
         .limit(6);
     }
 
-    // If still 0, return top featured available properties
+    // Fallback 2: If no properties under exact price in that area, find closest affordable homes in Addis Ababa
     if (properties.length === 0) {
       properties = await Property.find({ "availability.status": "Available" })
         .populate("owner", "name role avatar verificationTier")
+        .sort({ price: 1 })
         .limit(6);
     }
 
-    // Step 4: Calculate match scores
+    // Step 4: Calculate accurate match scores
     const enrichedProperties = properties.map((prop) => {
       const matchScore = calculateMatchScore(prop, {
         workplace: criteria.neighborhood || criteria.subCity,
-        budgetMax: criteria.maxPrice || 45000,
+        budgetMax: criteria.maxPrice || 35000,
         mustHaveAmenities: criteria.mustHaveAmenities,
+        minBedrooms: criteria.minBedrooms,
       });
       return {
         ...prop.toObject(),
@@ -236,65 +253,42 @@ User query: "${prompt}"`;
     // Sort by match score descending
     enrichedProperties.sort((a, b) => b.matchScore - a.matchScore);
 
-    // Step 5: Generate tailored explanations for top results
-    let explanations: any[] = [];
+    // Step 5: Tailored AI explanations
     const top3 = enrichedProperties.slice(0, 3);
+    const explanations = top3.map((p) => {
+      const reasons: string[] = [];
 
-    if (usedGemini && apiKey) {
-      try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-        const explanationPrompt = `You are Addis AI housing assistant.
-User query: "${prompt}"
-
-Top matching properties:
-${top3.map((p, i) => `${i + 1}. "${p.title}" in ${p.location.neighborhood || p.location.subCity} - ETB ${p.price}/mo - ${p.bedrooms} beds, amenities: ${p.amenities.join(", ")}`).join("\n")}
-
-Return ONLY valid JSON array (no markdown, no backticks):
-[{"title": "...", "reasons": ["reason1", "reason2", "reason3"]}]`;
-
-        const expResult = await model.generateContent(explanationPrompt);
-        const expText = expResult.response.text().trim();
-        const cleanedExp = expText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        explanations = JSON.parse(cleanedExp);
-      } catch {
-        // Fall through to heuristic reasons below
+      // Budget justification
+      if (criteria.maxPrice && p.price <= criteria.maxPrice) {
+        reasons.push(`Budget match: ETB ${p.price.toLocaleString()}/mo is within your ETB ${criteria.maxPrice.toLocaleString()} limit.`);
+      } else if (criteria.maxPrice) {
+        reasons.push(`Closest rate: ETB ${p.price.toLocaleString()}/mo (within ${Math.round(((p.price - criteria.maxPrice) / criteria.maxPrice) * 100)}% of your target).`);
+      } else {
+        reasons.push(`Competitive rate: ETB ${p.price.toLocaleString()}/mo for ${p.area} m².`);
       }
-    }
 
-    if (explanations.length === 0) {
-      explanations = top3.map((p) => {
-        const reasons: string[] = [];
-        // Location reason
-        if (p.location?.landmark) {
-          reasons.push(`Prime location: ${p.location.landmark}`);
-        } else {
-          reasons.push(`Located in desirable ${p.location.neighborhood || p.location.subCity} corridor`);
-        }
+      // Location justification
+      if (loc && (p.location?.neighborhood?.toLowerCase().includes(loc.toLowerCase()) || p.location?.subCity?.toLowerCase().includes(loc.toLowerCase()))) {
+        reasons.push(`Location: Direct proximity to ${p.location?.neighborhood || p.location?.subCity}.`);
+      } else {
+        reasons.push(`Location: Convenient transport corridor in ${p.location?.neighborhood || p.location?.subCity}, near ${p.location?.landmark || "transit hub"}.`);
+      }
 
-        // Budget reason
-        if (criteria.maxPrice && p.price <= criteria.maxPrice) {
-          reasons.push(`Budget match: ETB ${p.price.toLocaleString()}/mo is within your ETB ${criteria.maxPrice.toLocaleString()} limit`);
-        } else {
-          reasons.push(`Competitive rate: ETB ${p.price.toLocaleString()}/mo for ${p.area} m² space`);
-        }
+      // Utilities justification
+      const matchedAmenities = p.amenities.filter((a: string) =>
+        ["Water tank", "Water", "Generator", "24/7 security", "Parking", "Balcony", "Garden"].includes(a)
+      );
+      if (matchedAmenities.length > 0) {
+        reasons.push(`Utilities: Equipped with verified ${matchedAmenities.slice(0, 2).join(" & ")}.`);
+      } else {
+        reasons.push(`Direct lease with verified landlord representation.`);
+      }
 
-        // Utilities reason
-        const utilities = p.amenities.filter((a: string) =>
-          ["Water tank", "Water", "Generator", "24/7 security", "Parking", "Balcony", "Garden"].includes(a)
-        );
-        if (utilities.length > 0) {
-          reasons.push(`Verified amenities: ${utilities.slice(0, 3).join(", ")}`);
-        } else {
-          reasons.push(`Verified property with direct landlord communication`);
-        }
-
-        return {
-          title: p.title,
-          reasons,
-        };
-      });
-    }
+      return {
+        title: p.title,
+        reasons,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -302,7 +296,7 @@ Return ONLY valid JSON array (no markdown, no backticks):
       count: enrichedProperties.length,
       properties: enrichedProperties,
       explanations,
-      engine: usedGemini ? "Gemini 2.0 Flash" : "Addis Intelligent NLP Engine",
+      engine: usedGemini ? "Google Gemini 2.0 Flash" : "Addis Intelligent NLP Engine",
     });
   } catch (error) {
     next(error);

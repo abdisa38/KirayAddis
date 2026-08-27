@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Property, IProperty } from "../models/Property.js";
 import { AuthRequest } from "../middleware/auth.js";
 
-// Helper to calculate Match Score for a property based on user criteria or default Bole context
+// Helper to calculate Match Score for a property based on user criteria or default context
 export const calculateMatchScore = (
   property: IProperty,
   criteria?: {
@@ -10,36 +10,84 @@ export const calculateMatchScore = (
     budgetMax?: number;
     maxCommuteMin?: number;
     mustHaveAmenities?: string[];
+    minBedrooms?: number;
   }
 ): number => {
-  let score = 70; // baseline
+  let score = 50; // neutral base
 
   const budgetMax = criteria?.budgetMax || 40000;
+
+  // 1. Precise Budget Scoring
   if (property.price <= budgetMax) {
-    score += 15;
+    score += 25;
   } else if (property.price <= budgetMax * 1.15) {
-    score += 5;
+    score += 10;
+  } else if (property.price <= budgetMax * 1.35) {
+    score -= 15;
+  } else if (property.price <= budgetMax * 1.8) {
+    score -= 35;
   } else {
-    score -= 10;
+    // Heavily penalize listings far beyond budget
+    score -= 55;
   }
 
-  // Location/Destination proximity bonus
-  if (
-    property.location.subCity?.toLowerCase().includes("bole") ||
-    property.location.neighborhood?.toLowerCase().includes("bole")
-  ) {
+  // 2. Location / Workplace proximity scoring
+  if (criteria?.workplace) {
+    const locSearch = criteria.workplace.toLowerCase();
+    const propSubCity = (property.location?.subCity || "").toLowerCase();
+    const propNeigh = (property.location?.neighborhood || "").toLowerCase();
+    const propLandmark = (property.location?.landmark || "").toLowerCase();
+
+    if (
+      propSubCity.includes(locSearch) ||
+      propNeigh.includes(locSearch) ||
+      propLandmark.includes(locSearch) ||
+      locSearch.includes(propSubCity) ||
+      locSearch.includes(propNeigh)
+    ) {
+      score += 25;
+    } else {
+      // Check related corridors (e.g. Saris <-> Nifas Silk / Gotera)
+      if (
+        (locSearch.includes("saris") && (propSubCity.includes("nifas") || propNeigh.includes("jommo") || propNeigh.includes("gotera"))) ||
+        (locSearch.includes("kazanchis") && (propSubCity.includes("kirkos") || propNeigh.includes("megenagna"))) ||
+        (locSearch.includes("bole") && propSubCity.includes("bole"))
+      ) {
+        score += 15;
+      }
+    }
+  } else {
     score += 10;
   }
 
-  // Amenities bonus
-  if (property.amenities.includes("Water") || property.amenities.includes("Water tank")) {
-    score += 5;
-  }
-  if (property.amenities.includes("Generator") || property.amenities.includes("Electricity")) {
-    score += 5;
+  // 3. Bedrooms Match
+  if (criteria?.minBedrooms) {
+    if (property.bedrooms >= criteria.minBedrooms) {
+      score += 10;
+    } else {
+      score -= 15;
+    }
   }
 
-  return Math.min(Math.max(score, 60), 98);
+  // 4. Amenities bonuses
+  if (criteria?.mustHaveAmenities?.length) {
+    let matched = 0;
+    for (const item of criteria.mustHaveAmenities) {
+      if (property.amenities.some((a) => a.toLowerCase().includes(item.toLowerCase()))) {
+        matched++;
+      }
+    }
+    score += Math.min(matched * 5, 15);
+  } else {
+    if (property.amenities.includes("Water") || property.amenities.includes("Water tank")) {
+      score += 5;
+    }
+    if (property.amenities.includes("Generator") || property.amenities.includes("Electricity")) {
+      score += 5;
+    }
+  }
+
+  return Math.min(Math.max(score, 15), 98);
 };
 
 // @desc    Get all properties with filtering, search, & pagination
