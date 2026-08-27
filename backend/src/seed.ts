@@ -900,6 +900,58 @@ const seedData = async () => {
         verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
         statistics: { views: 68, inquiries: 3, saves: 8 },
       },
+
+      // 27. Saris Kadisco Budget Studio (10,000 ETB)
+      {
+        owner: landlord._id,
+        title: "Cozy Budget Studio in Saris Kadisco",
+        description: "Compact, well-ventilated studio apartment located near Saris Kadisco / Nifas Silk. Close to transport corridor, ring road access, with constant 2,000L backup water tank and 24/7 security guard.",
+        propertyType: "Studio",
+        price: 10000,
+        deposit: 10000,
+        bedrooms: 1,
+        bathrooms: 1,
+        area: 40,
+        location: {
+          city: "Addis Ababa",
+          subCity: "Nifas Silk-Lafto",
+          neighborhood: "Saris",
+          landmark: "Near Saris Kadisco Roundabout & Ring Road",
+          coordinates: { lat: 8.9450, lng: 38.7550 },
+        },
+        amenities: ["Water", "Water tank", "Electricity", "24/7 security"],
+        media: toMedia(photos.jommoStudio),
+        rentalTerms: { minContractMonths: 3, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
+        availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
+        verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
+        statistics: { views: 190, inquiries: 14, saves: 28 },
+      },
+
+      // 28. Saris Abo 2-Bedroom Apartment (18,000 ETB)
+      {
+        owner: landlord._id,
+        title: "Quiet 2-Bedroom Apartment in Saris Abo",
+        description: "Comfortable 2-bedroom flat in a quiet residential compound in Saris Abo. Features separate kitchen, hot shower, backup water tank, and dedicated parking space.",
+        propertyType: "Apartment",
+        price: 18000,
+        deposit: 18000,
+        bedrooms: 2,
+        bathrooms: 1,
+        area: 75,
+        location: {
+          city: "Addis Ababa",
+          subCity: "Nifas Silk-Lafto",
+          neighborhood: "Saris",
+          landmark: "Near Saris Abo Church & Light Rail Station",
+          coordinates: { lat: 8.9500, lng: 38.7580 },
+        },
+        amenities: ["Parking", "Water", "Water tank", "Electricity", "24/7 security", "Compound"],
+        media: toMedia(photos.bisrateGabrielCondo),
+        rentalTerms: { minContractMonths: 6, furnishing: "Unfurnished", paymentFrequency: "Monthly" },
+        availability: { status: "Available", availableFrom: new Date(), lastConfirmedAt: new Date() },
+        verification: { status: "Approved", verifiedAt: new Date(), verifiedBy: admin._id },
+        statistics: { views: 145, inquiries: 11, saves: 22 },
+      },
     ]);
 
     // Initial Inquiry & Message
