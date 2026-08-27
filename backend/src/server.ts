@@ -42,7 +42,42 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// Root Healthcheck API
+// Root Landing & Healthcheck API
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).send(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Addis Kiray API — Online</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f0f7f5; color: #11355b; }
+          .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); text-align: center; max-width: 500px; width: 90%; }
+          h1 { color: #0b8879; margin: 12px 0 8px; font-size: 24px; }
+          p { color: #526f84; font-size: 14px; line-height: 1.6; margin: 0 0 16px; }
+          .badge { display: inline-block; background: #e3f7f2; color: #075e53; padding: 6px 16px; border-radius: 99px; font-weight: 700; font-size: 12px; }
+          .links { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+          .links a { background: #0b8879; color: #ffffff; text-decoration: none; font-weight: 700; padding: 8px 16px; border-radius: 8px; font-size: 12px; }
+          .links a.sec { background: #f0f5f7; color: #173858; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <span class="badge">● Backend API Live & Connected</span>
+          <h1>Addis Kiray REST API</h1>
+          <p>The backend service for Addis Kiray is operational and connected to MongoDB Atlas.</p>
+          <p style="font-size: 12px; color: #738b9c;">This server provides REST APIs for the React frontend on Vercel.</p>
+          <div class="links">
+            <a href="/api/health">Check API Health</a>
+            <a href="/api/properties" class="sec">View Properties JSON</a>
+          </div>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
 app.get("/api/health", (req: Request, res: Response) => {
   res.status(200).json({
     status: "ok",
