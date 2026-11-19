@@ -426,7 +426,7 @@ export default function PropertyDetails() {
                     onClick={() => nav(`/property/${sim._id}`)}
                   >
                     <img
-                      src={cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"}
+                      src={cover?.url || "/images/properties/shalom-facade.jpg"}
                       alt={sim.title}
                     />
                     <span className="tiny-verify">
