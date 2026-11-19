@@ -262,7 +262,7 @@ export default function SearchResults() {
             area: `${p.area} m²`,
             propertyType: p.propertyType,
             tag: p.verification?.status === "Approved" ? "Verified" : undefined,
-            img: cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
+            img: cover?.url || "/images/properties/bole-road-1.jpg",
           };
         });
         setHomesList(mapped);

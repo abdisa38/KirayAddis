@@ -86,7 +86,7 @@ export default function AddisAI() {
 
   const getCoverImage = (p: AIProperty) => {
     const cover = p.media?.find((m) => m.isCover) || p.media?.[0];
-    return cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80";
+    return cover?.url || "/images/properties/bole-road-1.jpg";
   };
 
   const getExplanation = (title: string) => {
