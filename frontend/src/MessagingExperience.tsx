@@ -88,7 +88,7 @@ export default function MessagingExperience() {
               bedrooms: c.property?.bedrooms || 2,
               bathrooms: c.property?.bathrooms || 1,
               area: c.property?.area || 85,
-              image: cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
+              image: cover?.url || "/images/properties/bole-road-1.jpg",
               status: c.property?.availability?.status || "Available",
             },
             lastMsg: c.lastMessage || "Conversation started",
