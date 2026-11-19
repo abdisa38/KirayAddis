@@ -544,7 +544,7 @@ export default function LandlordExperience() {
                   >
                     <div style={{ position: "relative", height: "180px" }}>
                       <img
-                        src={cover?.url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"}
+                        src={cover?.url || "/images/properties/bole-road-1.jpg"}
                         alt={p.title}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
