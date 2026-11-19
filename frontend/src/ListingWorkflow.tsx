@@ -34,11 +34,11 @@ const availableAmenities = [
 ];
 
 const presetPhotos = [
-  { url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80", label: "Modern Apartment Exterior" },
-  { url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80", label: "Bright Living Room" },
-  { url: "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?auto=format&fit=crop&w=900&q=80", label: "Clean Kitchen" },
-  { url: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=900&q=80", label: "Master Bedroom" },
-  { url: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80", label: "Suburban Villa Compound" },
+  { url: "/images/properties/shalom-facade.jpg", label: "Addis Apartment Exterior" },
+  { url: "/images/properties/ethiopian-home-interior-1.jpg", label: "Bright Ethiopian Living Room" },
+  { url: "/images/properties/ethiopian-home-interior-3.jpg", label: "Clean Kitchen & Dining" },
+  { url: "/images/properties/ethiopian-home-interior-2.jpg", label: "Master Bedroom" },
+  { url: "/images/properties/zcac-compound.jpg", label: "Addis Villa Compound & Yard" },
 ];
 
 export default function ListingWorkflow() {
