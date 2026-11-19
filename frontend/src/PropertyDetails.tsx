@@ -79,9 +79,9 @@ export default function PropertyDetails() {
   const landlordName = propData?.owner?.name || "Verified Landlord";
   const propertyDescription = propData?.description || "Comfortable rental property in Addis Ababa with quality amenities.";
   const propertyMedia: string[] = propData?.media?.map((m: any) => m.url) || [
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/shalom-facade.jpg",
+    "/images/properties/ethiopian-home-interior-1.jpg",
+    "/images/properties/ethiopian-home-interior-2.jpg",
   ];
 
   const amenitiesList: string[] = propData?.amenities?.length
