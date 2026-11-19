@@ -22,6 +22,9 @@ dotenv.config();
 // Connect to MongoDB Atlas
 connectDB();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // Security and HTTP Middleware
@@ -45,6 +48,10 @@ app.options("*", cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static property and neighborhood images
+app.use("/images", express.static(path.join(__dirname, "../public/images")));
+app.use("/images", express.static(path.join(__dirname, "../../frontend/public/images")));
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));

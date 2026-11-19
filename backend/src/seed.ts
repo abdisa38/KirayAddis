@@ -14,150 +14,150 @@ try {
 
 dotenv.config();
 
-// Curated high-res unique architecture & interior photos
+// Curated authentic Ethiopian architecture, villas, apartments, compounds & interior photos
 const photos = {
   // Bole Apartments & Penthouses
   boleMedhanealem: [
-    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/bole-road-1.jpg",
+    "/images/properties/ethiopian-home-interior-1.jpg",
+    "/images/properties/ethiopian-home-interior-2.jpg",
   ],
   boleAtlas: [
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/bole-road-2.jpg",
+    "/images/properties/ethiopian-home-interior-3.jpg",
+    "/images/properties/mid-century-modern-2.jpg",
   ],
   boleRwandaPenthouse: [
-    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/addis-view-penthouse.jpg",
+    "/images/properties/sunset-addis.jpg",
+    "/images/properties/ethiopian-home-interior-4.jpg",
   ],
   boleBrassStudio: [
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1502005229762-ee1b2b8ab98f?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/mid-century-modern-1.jpg",
+    "/images/properties/ethiopian-home-interior-5.jpg",
+    "/images/properties/mid-century-modern-3.jpg",
   ],
   boleBulbulaVilla: [
-    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/besmelian-villa.jpg",
+    "/images/properties/zcac-compound.jpg",
+    "/images/properties/ethiopian-home-interior-1.jpg",
   ],
 
   // Kazanchis / Kirkos
   kazanchisStudio: [
-    "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/great-architectural-bldg.jpg",
+    "/images/properties/ethiopian-home-interior-2.jpg",
+    "/images/properties/ethiopian-home-interior-3.jpg",
   ],
   kazanchisBalcony: [
-    "https://images.unsplash.com/photo-1567496898669-ee935f5f647a?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/addis-city-view-1.jpg",
+    "/images/properties/ethiopian-home-interior-4.jpg",
+    "/images/properties/sunset-addis.jpg",
   ],
   meskelFlower: [
-    "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/addis-city-view-2.jpg",
+    "/images/properties/ethiopian-home-interior-5.jpg",
+    "/images/properties/addis-plaza-centre-1.jpg",
   ],
   goteraHighrise: [
-    "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1615873968403-89e068629265?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/multi-unit-residential-1985.jpg",
+    "/images/properties/multi-unit-residential-1986.jpg",
+    "/images/properties/ethiopian-home-interior-1.jpg",
   ],
 
   // CMC & Yeka
   cmcMichaelCondo: [
-    "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/apartments-ethiopia.jpg",
+    "/images/properties/ethiopian-home-interior-2.jpg",
+    "/images/properties/ethiopian-home-interior-3.jpg",
   ],
   cmcSafaricomStudio: [
-    "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1505692794406-0a256976cb17?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/mid-century-modern-4.jpg",
+    "/images/properties/ethiopian-home-interior-4.jpg",
+    "/images/properties/mid-century-modern-5.jpg",
   ],
   cmcSummitVilla: [
-    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/arequ-guesthouse.jpg",
+    "/images/properties/zcac-compound.jpg",
+    "/images/properties/ethiopian-home-interior-5.jpg",
   ],
   yekaAbadoHome: [
-    "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/residence-mid-level-1.jpg",
+    "/images/properties/residence-standard-1986.jpg",
+    "/images/properties/ethiopian-home-interior-1.jpg",
   ],
   yekaHillsPanoramic: [
-    "https://images.unsplash.com/photo-1502005097973-6a7082348e28?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/suburbs-of-addis-1.jpg",
+    "/images/properties/suburbs-of-addis-2.jpg",
+    "/images/properties/ethiopian-home-interior-2.jpg",
   ],
   yekaMegenagnaFlat: [
-    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/yeka-local-bldg.jpg",
+    "/images/properties/ethiopian-home-interior-3.jpg",
+    "/images/properties/addis-plaza-centre-2.jpg",
   ],
 
   // Sarbet / Nifas Silk-Lafto
   sarbetDiplomaticVilla: [
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/sarbet-mansion.jpg",
+    "/images/properties/embassy-mission-residence.jpg",
+    "/images/properties/ethiopian-home-interior-4.jpg",
   ],
   sarbetTomocaFlat: [
-    "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1556912167-f556f1f39fdf?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/tomoca-coffee-exterior.jpg",
+    "/images/properties/tomoca-coffee-interior.jpg",
+    "/images/properties/ethiopian-home-interior-5.jpg",
   ],
   bisrateGabrielCondo: [
-    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1502005229762-ee1b2b8ab98f?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/residence-mid-level-2.jpg",
+    "/images/properties/ethiopian-home-interior-1.jpg",
+    "/images/properties/ethiopian-home-interior-2.jpg",
   ],
   jommoStudio: [
-    "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1505692794406-0a256976cb17?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/residence-standard-1978.jpg",
+    "/images/properties/ethiopian-home-interior-3.jpg",
+    "/images/properties/ethiopian-home-interior-4.jpg",
   ],
 
   // Piassa / Arada
   piassaCorridor: [
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/shalom-facade.jpg",
+    "/images/properties/shalom-hallway.jpg",
+    "/images/properties/addis-piassa.jpg",
   ],
   piassa4KiloStudio: [
-    "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/shalom-ne-sw.jpg",
+    "/images/properties/ethiopian-home-interior-5.jpg",
+    "/images/properties/shalom-nw-se.jpg",
   ],
   aratKiloApartment: [
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/shalom-n-s.jpg",
+    "/images/properties/shalom-s-n.jpg",
+    "/images/properties/ethiopian-home-interior-1.jpg",
   ],
 
   // Lideta / Mexico
   lidetaCondo: [
-    "https://images.unsplash.com/photo-1541123437800-1bb1317badc2?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1615873968403-89e068629265?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/lideta-condo-1.jpg",
+    "/images/properties/lideta-condo-2.jpg",
+    "/images/properties/ethiopian-home-interior-2.jpg",
   ],
   mexicoSquareFlat: [
-    "https://images.unsplash.com/photo-1567496898669-ee935f5f647a?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/mexico-square-area.jpg",
+    "/images/properties/central-addis.jpg",
+    "/images/properties/ethiopian-home-interior-3.jpg",
   ],
 
   // Gullele
   shiroMedaVilla: [
-    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/armenian-style-villa.jpg",
+    "/images/properties/zcac-compound.jpg",
+    "/images/properties/ethiopian-home-interior-4.jpg",
   ],
   addisuGebeyaFlat: [
-    "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1556912167-f556f1f39fdf?auto=format&fit=crop&w=900&q=80",
+    "/images/properties/old-architecture-addis.jpg",
+    "/images/properties/compound-site-1986.jpg",
+    "/images/properties/ethiopian-home-interior-5.jpg",
   ],
 };
 

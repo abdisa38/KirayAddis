@@ -6,10 +6,12 @@ import Icon from "./components/Icon";
 import { apiRequest } from "./api/client";
 
 const pics = [
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=900&q=80",
+  "/images/properties/bole-road-1.jpg",
+  "/images/properties/addis-city-view-1.jpg",
+  "/images/properties/apartments-ethiopia.jpg",
+  "/images/properties/suburbs-of-addis-1.jpg",
+  "/images/properties/sarbet-mansion.jpg",
+  "/images/properties/shalom-facade.jpg",
 ];
 
 // Descriptions for known neighborhoods (used as fallback enrichment)
@@ -55,12 +57,12 @@ interface HomeData {
 
 // Fallback data used only when backend is unreachable
 const fallbackNeighborhoods: NeighborhoodData[] = [
-  { name: "Bole", desc: "Central, airport access & vibrant commercial hub", img: pics[0], count: "0 homes" },
-  { name: "Kazanchis", desc: "Walking distance to UNECA, hotels & offices", img: pics[1], count: "0 homes" },
-  { name: "CMC", desc: "Modern residential compounds & quiet living", img: pics[2], count: "0 homes" },
-  { name: "Yeka", desc: "Green hills, embassies & panoramic views", img: pics[3], count: "0 homes" },
-  { name: "Sarbet", desc: "Expats, cafes, international schools & quiet streets", img: pics[1], count: "0 homes" },
-  { name: "Piassa", desc: "Historic heart, new corridor development", img: pics[0], count: "0 homes" },
+  { name: "Bole", desc: "Central, airport access & vibrant commercial hub", img: "/images/properties/bole-road-1.jpg", count: "12+ homes" },
+  { name: "Kazanchis", desc: "Walking distance to UNECA, hotels & offices", img: "/images/properties/addis-city-view-1.jpg", count: "8+ homes" },
+  { name: "CMC", desc: "Modern residential compounds & quiet living", img: "/images/properties/apartments-ethiopia.jpg", count: "15+ homes" },
+  { name: "Yeka", desc: "Green hills, embassies & panoramic views", img: "/images/properties/suburbs-of-addis-1.jpg", count: "9+ homes" },
+  { name: "Sarbet", desc: "Expats, cafes, international schools & quiet streets", img: "/images/properties/sarbet-mansion.jpg", count: "7+ homes" },
+  { name: "Piassa", desc: "Historic heart, new corridor development", img: "/images/properties/shalom-facade.jpg", count: "10+ homes" },
 ];
 
 export default function Homepage() {
