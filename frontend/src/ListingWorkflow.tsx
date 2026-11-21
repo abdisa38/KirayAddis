@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
-import { apiRequest } from "./api/client";
+import { apiRequest, handleImageError } from "./api/client";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
@@ -494,7 +494,7 @@ export default function ListingWorkflow() {
                         border: photosList.some((p) => p.url === preset.url) ? "2px solid #0b8879" : "1px solid #d4e0e8",
                       }}
                     >
-                      <img src={preset.url} alt={preset.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={preset.url} alt={preset.label} onError={handleImageError} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       <span style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: "9px", padding: "2px 4px", textAlign: "center" }}>
                         {preset.label}
                       </span>
@@ -521,7 +521,7 @@ export default function ListingWorkflow() {
                           border: photo.isCover ? "3px solid #0b8879" : "1px solid #cbd9e1",
                         }}
                       >
-                        <img src={photo.url} alt={`Listing photo ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={photo.url} alt={`Listing photo ${i + 1}`} onError={handleImageError} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         {photo.isCover && (
                           <span style={{ position: "absolute", top: "4px", left: "4px", background: "#0b8879", color: "#fff", fontSize: "9px", fontWeight: 800, padding: "2px 6px", borderRadius: "4px" }}>
                             COVER
@@ -659,6 +659,7 @@ export default function ListingWorkflow() {
               <img
                 src={coverImg}
                 alt="Property preview"
+                onError={handleImageError}
                 style={{ width: "200px", height: "140px", objectFit: "cover", borderRadius: "10px" }}
               />
               <div>

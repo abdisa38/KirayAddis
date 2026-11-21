@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
-import { apiRequest } from "./api/client";
+import { apiRequest, handleImageError } from "./api/client";
 import Logo from "./components/Logo";
 import Icon from "./components/Icon";
 
@@ -339,7 +339,7 @@ export default function MessagingExperience() {
 
               {/* Property Mini Banner */}
               <div className="property-strip">
-                <img src={activeConv.property.image} alt={activeConv.property.title} />
+                <img src={activeConv.property.image} alt={activeConv.property.title} onError={handleImageError} />
                 <div>
                   <b>{activeConv.property.title}</b>
                   <span>
@@ -458,7 +458,7 @@ export default function MessagingExperience() {
         {/* Right Column: Property Details Sidebar */}
         {activeConv && (
           <aside className="context">
-            <img src={activeConv.property.image} alt={activeConv.property.title} />
+            <img src={activeConv.property.image} alt={activeConv.property.title} onError={handleImageError} />
             <span className="verified">
               <Icon name="check" /> Property verified
             </span>

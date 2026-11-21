@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Icon from "./components/Icon";
-import { apiRequest } from "./api/client";
+import { apiRequest, handleImageError } from "./api/client";
 
 const samplePrompts = [
   "I work in Bole around Edna Mall, have a 40,000 ETB budget and need a quiet 2-bedroom apartment with water backup.",
@@ -267,7 +267,7 @@ export default function AddisAI() {
                   const exp = getExplanation(p.title);
                   return (
                     <div className="ai-property" key={p._id}>
-                      <img src={getCoverImage(p)} alt={p.title} />
+                      <img src={getCoverImage(p)} alt={p.title} onError={handleImageError} />
                       <div>
                         <span>{p.matchScore}% Match</span>
                         <h2>{p.title}</h2>

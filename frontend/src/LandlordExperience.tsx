@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
-import { apiRequest } from "./api/client";
+import { apiRequest, handleImageError } from "./api/client";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Icon from "./components/Icon";
@@ -546,6 +546,7 @@ export default function LandlordExperience() {
                       <img
                         src={cover?.url || "/images/properties/bole-road-1.jpg"}
                         alt={p.title}
+                        onError={handleImageError}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
                       <span

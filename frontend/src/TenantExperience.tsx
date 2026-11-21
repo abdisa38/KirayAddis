@@ -413,6 +413,7 @@ export default function TenantExperience() {
                       <img
                         src={cover?.url || "/images/properties/bole-road-1.jpg"}
                         alt={p.title}
+                        onError={handleImageError}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
                       <span
@@ -535,6 +536,7 @@ export default function TenantExperience() {
                         <img
                           src={cover?.url || "/images/properties/bole-road-1.jpg"}
                           alt={p.title}
+                          onError={handleImageError}
                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         />
                         <button
