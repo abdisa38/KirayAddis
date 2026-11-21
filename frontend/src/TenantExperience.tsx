@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "./context/AuthContext";
-import { apiRequest } from "./api/client";
+import { apiRequest, handleImageError } from "./api/client";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Icon from "./components/Icon";

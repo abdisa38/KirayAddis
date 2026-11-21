@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import Navbar from "./components/Navbar";
 import Icon from "./components/Icon";
-import { apiRequest } from "./api/client";
+import { apiRequest, handleImageError } from "./api/client";
 
 interface PropertyItem {
   id: string;
@@ -51,7 +51,7 @@ function Card({
       style={{ cursor: "pointer" }}
     >
       <div className="photo">
-        <img src={h.img} alt={h.name} />
+        <img src={h.img} alt={h.name} onError={handleImageError} />
         {h.tag && (
           <span className="verified">
             <Icon name="check" /> {h.tag}
@@ -466,7 +466,7 @@ export default function SearchResults() {
             <span className="area a4">CMC</span>
 
             <div className="map-preview">
-              <img src={currentSelected.img} alt={currentSelected.name} />
+              <img src={currentSelected.img} alt={currentSelected.name} onError={handleImageError} />
               <div>
                 <span className="verified">
                   <Icon name="check" /> {currentSelected.tag || "Verified Listing"}

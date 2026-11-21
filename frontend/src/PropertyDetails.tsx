@@ -428,6 +428,7 @@ export default function PropertyDetails() {
                     <img
                       src={cover?.url || "/images/properties/shalom-facade.jpg"}
                       alt={sim.title}
+                      onError={handleImageError}
                     />
                     <span className="tiny-verify">
                       <Icon name="check" /> Verified
@@ -492,6 +493,7 @@ export default function PropertyDetails() {
                   key={i}
                   src={url}
                   alt={`Photo ${i + 1}`}
+                  onError={handleImageError}
                   style={{ width: "100%", height: "240px", objectFit: "cover", borderRadius: "8px" }}
                 />
               ))}
