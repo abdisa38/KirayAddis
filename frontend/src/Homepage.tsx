@@ -417,7 +417,7 @@ export default function Homepage() {
                 boxShadow: "0 8px 24px rgba(10, 40, 70, 0.18)",
               }}
             >
-              <img src={heroProperty?.img || pics[0]} alt="Selected property" />
+              <img src={heroProperty?.img || pics[0]} alt="Selected property" onError={handleImageError} />
               <div>
                 <span className="verified">
                   <Icon name="check" /> Verified property
@@ -582,7 +582,7 @@ export default function Homepage() {
                 style={{ cursor: "pointer", display: "flex", flexDirection: "column", border: "1px solid #e0e9ee", borderRadius: "12px", overflow: "hidden", background: "#fff" }}
               >
                 <div className="photo" style={{ height: "190px" }}>
-                  <img src={h.img} alt={h.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={h.img} alt={h.name} onError={handleImageError} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <span className="verified">
                     <Icon name="check" /> Verified property
                   </span>
@@ -769,7 +769,7 @@ export default function Homepage() {
                 alignItems: "center",
               }}
             >
-              <img src={liveHomes[1]?.img || pics[1]} alt="Preview" style={{ width: "90px", height: "70px", borderRadius: "6px", objectFit: "cover" }} />
+              <img src={liveHomes[1]?.img || pics[1]} alt="Preview" onError={handleImageError} style={{ width: "90px", height: "70px", borderRadius: "6px", objectFit: "cover" }} />
               <div>
                 <span style={{ background: "#e1f4ef", color: "#087d70", padding: "2px 6px", borderRadius: "99px", fontSize: "8px", fontWeight: 800 }}>
                   {liveHomes[1]?.match || "94"}% Match

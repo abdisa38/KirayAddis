@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useAuth } from "./context/AuthContext";
-import { apiRequest } from "./api/client";
+import { apiRequest, handleImageError } from "./api/client";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Icon from "./components/Icon";
@@ -178,7 +178,7 @@ export default function PropertyDetails() {
         {/* Dynamic Unique Photo Gallery */}
         <section className="gallery">
           <div className="main-shot">
-            <img src={propertyMedia[0]} alt={propertyTitle} />
+            <img src={propertyMedia[0]} alt={propertyTitle} onError={handleImageError} />
             <div className="gallery-actions">
               <Link to="/search" aria-label="Back to search">
                 <Icon name="arrow" />
@@ -212,9 +212,9 @@ export default function PropertyDetails() {
           </div>
 
           <div className="gallery-side">
-            <img src={propertyMedia[1] || propertyMedia[0]} alt={`${propertyTitle} interior`} />
+            <img src={propertyMedia[1] || propertyMedia[0]} alt={`${propertyTitle} interior`} onError={handleImageError} />
             <div className="video">
-              <img src={propertyMedia[2] || propertyMedia[0]} alt={`${propertyTitle} room view`} />
+              <img src={propertyMedia[2] || propertyMedia[0]} alt={`${propertyTitle} room view`} onError={handleImageError} />
               <button onClick={() => setGallery(true)} type="button">
                 <Icon name="photo" /> View Gallery
               </button>
