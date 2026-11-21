@@ -530,6 +530,7 @@ export default function Homepage() {
               <img
                 src={n.img}
                 alt={n.name}
+                onError={handleImageError}
                 style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.72)" }}
               />
               <div

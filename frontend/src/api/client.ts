@@ -10,13 +10,30 @@ if (!rawBase.endsWith("/api")) {
 
 export const API_BASE_URL = rawBase;
 
-// Fallback to Render backend host if local Vercel image fails
+// Fallback to Render backend host if local Vercel image fails, or to default Ethiopian photo
 export function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
   const target = e.currentTarget;
-  const currentSrc = target.getAttribute("src") || "";
-  if (currentSrc.startsWith("/images/properties/") && !target.dataset.retried) {
-    target.dataset.retried = "true";
-    target.src = `https://kirayaddis-kvmn.onrender.com${currentSrc}`;
+  const currentSrc = target.getAttribute("src") || target.src || "";
+
+  // Step 1: If it's a local /images/properties/ path that failed, try Render backend host
+  if (currentSrc.includes("/images/properties/") && !target.dataset.retriedBackend) {
+    target.dataset.retriedBackend = "true";
+    const path = currentSrc.substring(currentSrc.indexOf("/images/properties/"));
+    target.src = `https://kirayaddis-kvmn.onrender.com${path}`;
+    return;
+  }
+
+  // Step 2: Fallback to default Ethiopian house photo
+  if (!target.dataset.retriedDefault) {
+    target.dataset.retriedDefault = "true";
+    target.src = "/images/properties/bole-road-1.jpg";
+    return;
+  }
+
+  // Step 3: If even local default fails, use the backend default directly
+  if (!target.dataset.retriedFinal) {
+    target.dataset.retriedFinal = "true";
+    target.src = "https://kirayaddis-kvmn.onrender.com/images/properties/bole-road-1.jpg";
   }
 }
 
