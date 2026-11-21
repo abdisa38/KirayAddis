@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Icon from "./components/Icon";
-import { apiRequest } from "./api/client";
+import { apiRequest, handleImageError } from "./api/client";
 
 const pics = [
   "/images/properties/bole-road-1.jpg",

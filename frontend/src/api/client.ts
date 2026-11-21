@@ -10,6 +10,21 @@ if (!rawBase.endsWith("/api")) {
 
 export const API_BASE_URL = rawBase;
 
+// Fallback to Render backend host if local Vercel image fails
+export function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
+  const target = e.currentTarget;
+  const currentSrc = target.getAttribute("src") || "";
+  if (currentSrc.startsWith("/images/properties/") && !target.dataset.retried) {
+    target.dataset.retried = "true";
+    target.src = `https://kirayaddis-kvmn.onrender.com${currentSrc}`;
+  }
+}
+
+export function getImageUrl(url?: string): string {
+  if (!url) return "/images/properties/bole-road-1.jpg";
+  return url;
+}
+
 export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
